@@ -20,7 +20,15 @@ class Student extends Model
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
-    public function level() {
-        return $this->belongsTo(Level::class);
+    public function finalResult() {
+        return $this->hasOne(FinalResult::class);
+    }
+
+    public function transfers() {
+        return $this->hasMany(TransfersAdmission::class);
+    }
+
+    public function certificateReplacements() {
+        return $this->hasMany(CertificateReplacement::class);
     }
 }
