@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Exports\FinalResultExport;
+use App\Models\AcademicYear;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FinalResultController extends Controller
@@ -20,7 +21,9 @@ class FinalResultController extends Controller
             $className = $request->class_name;
             $academicYearId = $request->academic_year_id;
 
-            $fileName = 'final_result_' . $className . '_year_' . $academicYearId . '.xlsx';
+            $academicYear = AcademicYear::findOrFail($academicYearId);
+
+            $fileName = 'final_result_' . $className . '_year_' . $academicYear->year . '.xlsx';
 
             return Excel::download(
                 new FinalResultExport($className, $academicYearId),

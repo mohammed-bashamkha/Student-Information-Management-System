@@ -32,6 +32,7 @@ class FinalResultExport implements FromCollection, WithHeadings
         $headings = [
             'Level',
             'Class',
+            'School Name',
             'Student Name',
             'Student Number',
         ];
@@ -72,6 +73,7 @@ class FinalResultExport implements FromCollection, WithHeadings
             $row = [
                 $student->schoolClass->level->name,
                 $student->schoolClass->name,
+                $student->school->name,
                 $student->full_name,
                 $student->school_number,
             ];
