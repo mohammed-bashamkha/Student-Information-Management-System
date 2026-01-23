@@ -9,3 +9,9 @@ Route::get('/', function () {
 
 Route::get('/export/final-result', [FinalResultController::class, 'export'])
     ->name('final-result.export');
+
+Route::get('/import/final-result', [FinalResultController::class, 'showImport'])
+    ->name('import.form');
+
+Route::post('/import/final-result', [FinalResultController::class, 'import'])
+    ->name('import.submit');
