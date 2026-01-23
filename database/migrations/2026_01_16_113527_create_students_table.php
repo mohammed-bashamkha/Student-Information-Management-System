@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->foreignId('created_by')->constrained('users');
-            $table->foreignId('school_id')->constrained();
+            $table->foreignId('school_id')->constrained('schools');
             $table->foreignId('class_id')->constrained('school_classes');
             $table->string('school_number')->unique();
             $table->string('seat_number')->nullable();
             $table->string('full_name');
-            $table->string('nationality');
-            $table->enum('gender', ['male', 'female']);
-            $table->date('date_of_birth');
-            $table->date('registration_date');
+            $table->string('nationality')->nullable();
+            $table->enum('gender', ['male', 'female'])->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->date('registration_date')->nullable();
             $table->timestamps();
         });
     }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained('students');
             $table->foreignId('academic_year_id')->constrained('academic_years');
             $table->decimal('total_student_grades', 6, 2);
+            $table->decimal('average_grade', 5, 2)->nullable();
             $table->string('final_result');
             $table->text('notes')->nullable();
             $table->timestamps();
