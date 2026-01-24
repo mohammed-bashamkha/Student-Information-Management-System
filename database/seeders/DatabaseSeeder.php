@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\AcademicYear;
 use App\Models\Level;
 use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -54,8 +55,37 @@ class DatabaseSeeder extends Seeder
             ['created_by' => $user_id,'name' => 'التاسع', 'level_id' => 1],
 
             ['created_by' => $user_id,'name' => 'أولى ثانوي', 'level_id' => 2],
-            ['created_by' => $user_id,'name' => 'ثانية ثانوي', 'level_id' => 2],
-            ['created_by' => $user_id,'name' => 'ثالثة ثانوي', 'level_id' => 2],
+            ['created_by' => $user_id,'name' => 'ثانية ثانوي علمي', 'level_id' => 2],
+            ['created_by' => $user_id,'name' => 'ثانية ثانوي أدبي', 'level_id' => 2],
+            ['created_by' => $user_id,'name' => 'ثالثة ثانوي علمي', 'level_id' => 2],
+            ['created_by' => $user_id,'name' => 'ثالثة ثانوي أدبي', 'level_id' => 2],
+        ]);
+
+        Subject::factory()->createMany([
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'القران الكريم'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'التربية الأسلامية'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'اللغة العربية'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'اللغة الإنجليزية'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'الرياضيات'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'الاجتماعيات'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'العلوم'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'التربية الفنية'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'الحاسوب'],
+            ['created_by' => $user_id, 'level_id' => 1, 'name' => 'التربية بدنية'],
+
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'اللغة العربية'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'القران الكريم'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'التربية الأسلامية'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'اللغة العربية'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'اللغة الإنجليزية'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'الرياضيات'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'الفيزياء'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'الكيمياء'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'الأحياء'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'التاريخ'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'الجغرافيا'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'أقتصاد'],
+            ['created_by' => $user_id, 'level_id' => 2, 'name' => 'مجتمع'],
         ]);
     }
 }

@@ -19,9 +19,8 @@ use Illuminate\Support\Str;
 class FinalResultImport implements ToCollection, WithHeadingRow
 {
     protected $academicYearId;
-    protected $userId; // لتخزين created_by
+    protected $userId;
 
-    // Caching لتسريع عملية الاستيراد
     private $schoolsCache = [];
     private $levelsCache = [];
     private $classesCache = [];
@@ -30,90 +29,86 @@ class FinalResultImport implements ToCollection, WithHeadingRow
     public function __construct(int $academicYearId)
     {
         $this->academicYearId = $academicYearId;
-        $this->userId = Auth::id() ?? 1; // احصل على هوية المستخدم الحالي أو استخدم قيمة افتراضية
+        $this->userId = Auth::id() ?? 1;
     }
 
     public function collection(Collection $rows)
     {
+        dd($rows->first()->toArray());
         DB::transaction(function () use ($rows) {
             foreach ($rows as $row) {
-                // تجاهل الصف إذا كانت الأعمدة الأساسية فارغة
-                if (empty($row['student_number']) || empty($row['student_name']) || empty($row['class']) || empty($row['level']) || empty($row['school_name'])) {
+                // استخدام slugged keys التي تولدها المكتبة (أو استخدام طريقة preg_match التي لا تهتم بالمفاتيح)
+                // للتبسيط، سنستخدم الأسماء العربية مباشرة في الكود ونتأكد من أن ملف الإكسل يطابقها
+                if (empty($row['الرقم المدرسي']) || empty($row['اسم الطالب']) || empty($row['الصف']) || empty($row['المستوى الدراسي']) || empty($row['المدرسة'])) {
                     continue;
                 }
 
-                // 1. البحث عن المدرسة أو إنشاؤها
-                $school = $this->findOrCreateSchool($row['school_name']);
+                $school = $this->findOrCreateSchool($row['المدرسة']);
+                $level = $this->findOrCreateLevel($row['المستوى الدراسي']);
+                $class = $this->findOrCreateClass($row['الصف'], $level->id);
 
-                // 2. البحث عن المستوى أو إنشاؤه
-                $level = $this->findOrCreateLevel($row['level']);
-
-                // 3. البحث عن الصف الدراسي أو إنشاؤه
-                $class = $this->findOrCreateClass($row['class'], $level->id);
-
-                // 4. الآن، قم بإنشاء الطالب أو تحديثه
                 $student = Student::updateOrCreate(
+                    ['school_number' => $row['الرقم المدرسي']],
                     [
-                        // ابحث عن الطالب بهذا الرقم
-                        'school_number' => $row['student_number'],
-                    ],
-                    [
-                        // إذا وجدته، قم بتحديث بياناته، وإذا لم تجده، قم بإنشائه بهذه البيانات
-                        'full_name' => $row['student_name'],
+                        'full_name' => $row['اسم الطالب'],
                         'school_id' => $school->id,
                         'class_id' => $class->id,
                         'created_by' => $this->userId,
                     ]
                 );
 
-                // 5. جلب المواد الخاصة بالصف
-                $subjects = $this->getSubjectsForClass($row['class']);
-                if ($subjects->isEmpty()) {
-                    continue;
+                // --- المنطق الديناميكي الذي يقرأ العناوين العربية مباشرة ---
+                $gradesData = [];
+                foreach ($row as $header => $value) {
+                    // هذا التعبير يبحث عن نمط مثل "الرياضيات ف1" أو "العلوم المجموع"
+                    if (preg_match('/^(.*) (ف1|ف2|المجموع)$/u', $header, $matches)) {
+                        $subjectName = trim($matches[1]);
+                        $gradeType = trim($matches[2]);
+
+                        if (empty($subjectName)) continue;
+
+                        $subject = $this->findOrCreateSubject($subjectName, $level->id);
+
+                        if (!isset($gradesData[$subject->id])) $gradesData[$subject->id] = [];
+                        if ($gradeType === 'ف1') $gradesData[$subject->id]['first_semester_total'] = $value;
+                        if ($gradeType === 'ف2') $gradesData[$subject->id]['second_semester_total'] = $value;
+                        if ($gradeType === 'المجموع') $gradesData[$subject->id]['total'] = $value;
+                    }
                 }
 
-                // 6. إنشاء/تحديث الدرجات (نفس المنطق السابق)
-                foreach ($subjects as $subject) {
-                    $t1Key = Str::snake($subject->name . ' T1');
-                    $t2Key = Str::snake($subject->name . ' T2');
-                    $totalKey = Str::snake($subject->name . ' Total');
-
+                // إنشاء/تحديث الدرجات
+                foreach ($gradesData as $subjectId => $data) {
                     Grade::updateOrCreate(
-                        ['student_id' => $student->id, 'subject_id' => $subject->id, 'academic_year_id' => $this->academicYearId, 'created_by' => $this->userId],
-                        ['first_semester_total' => $row[$t1Key] ?? null, 'second_semester_total' => $row[$t2Key] ?? null, 'total' => $row[$totalKey] ?? null]
+                        ['student_id' => $student->id, 'subject_id' => $subjectId, 'academic_year_id' => $this->academicYearId, 'created_by' => $this->userId],
+                        ['first_semester_total' => $data['first_semester_total'] ?? null, 'second_semester_total' => $data['second_semester_total'] ?? null, 'total' => $data['total'] ?? null]
                     );
                 }
 
-                // 7. إنشاء/تحديث النتيجة النهائية (نفس المنطق السابق)
+                // إنشاء/تحديث النتيجة النهائية
                 FinalResult::updateOrCreate(
                     ['student_id' => $student->id, 'academic_year_id' => $this->academicYearId, 'created_by' => $this->userId],
-                    ['total_student_grades' => $row['total_result'] ?? 0, 'final_result' => $row['final_result'] ?? 'N/A', 'notes' => $row['notes'] ?? null]
+                    ['total_student_grades' => $row['المجموع الكلي'] ?? 0, 'final_result' => $row['النتيجة النهائية'] ?? 'N/A', 'notes' => $row['ملاحظات'] ?? null]
                 );
             }
         });
     }
 
-    // --- دوال مساعدة مع Caching لتحسين الأداء ---
-
+    // --- دوال مساعدة (لا تغيير هنا) ---
     private function findOrCreateSchool(string $name) {
         if (isset($this->schoolsCache[$name])) return $this->schoolsCache[$name];
         return $this->schoolsCache[$name] = School::firstOrCreate(['name' => $name], ['created_by' => $this->userId]);
     }
-
     private function findOrCreateLevel(string $name) {
         if (isset($this->levelsCache[$name])) return $this->levelsCache[$name];
         return $this->levelsCache[$name] = Level::firstOrCreate(['name' => $name], ['created_by' => $this->userId]);
     }
-
     private function findOrCreateClass(string $name, int $levelId) {
         if (isset($this->classesCache[$name])) return $this->classesCache[$name];
         return $this->classesCache[$name] = SchoolClass::firstOrCreate(['name' => $name, 'level_id' => $levelId], ['created_by' => $this->userId]);
     }
-
-    private function getSubjectsForClass(string $className): Collection
-    {
-        if (isset($this->subjectsCache[$className])) return $this->subjectsCache[$className];
-        $subjects = Subject::whereHas('level.classes', fn($q) => $q->where('name', $className))->orderBy('id')->get();
-        return $this->subjectsCache[$className] = $subjects;
+    private function findOrCreateSubject(string $name, int $levelId) {
+        $cacheKey = $name . '_' . $levelId;
+        if (isset($this->subjectsCache[$cacheKey])) return $this->subjectsCache[$cacheKey];
+        return $this->subjectsCache[$cacheKey] = Subject::firstOrCreate(['name' => $name, 'level_id' => $levelId], ['created_by' => $this->userId]);
     }
 }
