@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('level_id')->constrained();
+            $table->foreignId('school_class_id')->constrained('school_classes');
             $table->string('name');
             $table->timestamps();
         });

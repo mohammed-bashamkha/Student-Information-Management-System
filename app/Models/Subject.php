@@ -17,4 +17,8 @@ class Subject extends Model
     public function level() {
         return $this->belongsTo(Level::class);
     }
+
+    public function schoolClass() {
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
 }
