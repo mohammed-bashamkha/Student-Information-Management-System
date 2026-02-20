@@ -15,3 +15,5 @@ Route::get('/import/final-result', [FinalResultController::class, 'showImport'])
 
 Route::post('/import/final-result', [FinalResultController::class, 'import'])
     ->name('import.submit');
+
+Route::get('/final-results', [FinalResultController::class, 'index']);

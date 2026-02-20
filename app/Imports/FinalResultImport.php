@@ -3,112 +3,108 @@
 namespace App\Imports;
 
 use App\Models\Student;
-use App\Models\Subject;
 use App\Models\Grade;
 use App\Models\FinalResult;
-use App\Models\School;
 use App\Models\SchoolClass;
-use App\Models\Level;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithStartRow;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
-class FinalResultImport implements ToCollection, WithHeadingRow
+class FinalResultImport implements ToCollection, WithStartRow
 {
     protected $academicYearId;
+    protected $classId;
+    protected $schoolId;
     protected $userId;
 
-    private $schoolsCache = [];
-    private $levelsCache = [];
-    private $classesCache = [];
     private $subjectsCache = [];
 
-    public function __construct(int $academicYearId)
+    public function __construct(int $academicYearId, int $classId, int $schoolId)
     {
         $this->academicYearId = $academicYearId;
+        $this->classId = $classId;
+        $this->schoolId = $schoolId;
         $this->userId = Auth::id() ?? 1;
+    }
+
+    public function startRow(): int
+    {
+        return 5;
     }
 
     public function collection(Collection $rows)
     {
-        dd($rows->first()->toArray());
         DB::transaction(function () use ($rows) {
+            $subjects = $this->getSubjectsForClass($this->classId);
+            if ($subjects->isEmpty()) {
+                throw new \Exception("لا توجد مواد مسجلة لهذا الصف. الرجاء التأكد من تسجيل المواد أولاً.");
+            }
+
             foreach ($rows as $row) {
-                // استخدام slugged keys التي تولدها المكتبة (أو استخدام طريقة preg_match التي لا تهتم بالمفاتيح)
-                // للتبسيط، سنستخدم الأسماء العربية مباشرة في الكود ونتأكد من أن ملف الإكسل يطابقها
-                if (empty($row['الرقم المدرسي']) || empty($row['اسم الطالب']) || empty($row['الصف']) || empty($row['المستوى الدراسي']) || empty($row['المدرسة'])) {
+                // --- التصحيح الأول هنا ---
+                $studentNumber = $row[1] ?? null; // الرقم المدرسي في العمود الأول
+                $studentName   = $row[2] ?? null; // اسم الطالب في العمود الثاني
+
+                if (empty($studentNumber) || empty($studentName)) {
                     continue;
                 }
 
-                $school = $this->findOrCreateSchool($row['المدرسة']);
-                $level = $this->findOrCreateLevel($row['المستوى الدراسي']);
-                $class = $this->findOrCreateClass($row['الصف'], $level->id);
-
                 $student = Student::updateOrCreate(
-                    ['school_number' => $row['الرقم المدرسي']],
+                    ['school_number' => $studentNumber],
                     [
-                        'full_name' => $row['اسم الطالب'],
-                        'school_id' => $school->id,
-                        'class_id' => $class->id,
-                        'created_by' => $this->userId,
+                        'full_name' => $studentName,
+                        'school_id' => $this->schoolId,
+                        'class_id' => $this->classId, // <-- التصحيح الثاني هنا
+                        'created_by' => $this->userId
                     ]
                 );
 
-                // --- المنطق الديناميكي الذي يقرأ العناوين العربية مباشرة ---
-                $gradesData = [];
-                foreach ($row as $header => $value) {
-                    // هذا التعبير يبحث عن نمط مثل "الرياضيات ف1" أو "العلوم المجموع"
-                    if (preg_match('/^(.*) (ف1|ف2|المجموع)$/u', $header, $matches)) {
-                        $subjectName = trim($matches[1]);
-                        $gradeType = trim($matches[2]);
+                // هذا صحيح، درجات المواد تبدأ من العمود الثالث
+                $subjectGradesStartIndex = 3;
 
-                        if (empty($subjectName)) continue;
-
-                        $subject = $this->findOrCreateSubject($subjectName, $level->id);
-
-                        if (!isset($gradesData[$subject->id])) $gradesData[$subject->id] = [];
-                        if ($gradeType === 'ف1') $gradesData[$subject->id]['first_semester_total'] = $value;
-                        if ($gradeType === 'ف2') $gradesData[$subject->id]['second_semester_total'] = $value;
-                        if ($gradeType === 'المجموع') $gradesData[$subject->id]['total'] = $value;
-                    }
-                }
-
-                // إنشاء/تحديث الدرجات
-                foreach ($gradesData as $subjectId => $data) {
+                foreach ($subjects as $index => $subject) {
+                    $firstSemesterIndex = $subjectGradesStartIndex + ($index * 3);
                     Grade::updateOrCreate(
-                        ['student_id' => $student->id, 'subject_id' => $subjectId, 'academic_year_id' => $this->academicYearId, 'created_by' => $this->userId],
-                        ['first_semester_total' => $data['first_semester_total'] ?? null, 'second_semester_total' => $data['second_semester_total'] ?? null, 'total' => $data['total'] ?? null]
+                        ['student_id' => $student->id, 'subject_id' => $subject->id, 'academic_year_id' => $this->academicYearId],
+                        [
+                            'first_semester_total' => $row[$firstSemesterIndex] ?? null,
+                            'second_semester_total' => $row[$firstSemesterIndex + 1] ?? null,
+                            'total' => $row[$firstSemesterIndex + 2] ?? null,
+                            'created_by' => $this->userId
+                        ]
                     );
                 }
 
-                // إنشاء/تحديث النتيجة النهائية
+                $finalResultStartIndex = $subjectGradesStartIndex + (count($subjects) * 3);
+
                 FinalResult::updateOrCreate(
-                    ['student_id' => $student->id, 'academic_year_id' => $this->academicYearId, 'created_by' => $this->userId],
-                    ['total_student_grades' => $row['المجموع الكلي'] ?? 0, 'final_result' => $row['النتيجة النهائية'] ?? 'N/A', 'notes' => $row['ملاحظات'] ?? null]
+                    ['student_id' => $student->id, 'academic_year_id' => $this->academicYearId],
+                    [
+                        'total_student_grades' => $row[$finalResultStartIndex] ?? 0,
+                        'final_result' => $row[$finalResultStartIndex + 1] ?? 'N/A',
+                        'notes' => $row[$finalResultStartIndex + 2] ?? null,
+                        'created_by' => $this->userId
+                    ]
                 );
             }
         });
     }
 
-    // --- دوال مساعدة (لا تغيير هنا) ---
-    private function findOrCreateSchool(string $name) {
-        if (isset($this->schoolsCache[$name])) return $this->schoolsCache[$name];
-        return $this->schoolsCache[$name] = School::firstOrCreate(['name' => $name], ['created_by' => $this->userId]);
-    }
-    private function findOrCreateLevel(string $name) {
-        if (isset($this->levelsCache[$name])) return $this->levelsCache[$name];
-        return $this->levelsCache[$name] = Level::firstOrCreate(['name' => $name], ['created_by' => $this->userId]);
-    }
-    private function findOrCreateClass(string $name, int $levelId) {
-        if (isset($this->classesCache[$name])) return $this->classesCache[$name];
-        return $this->classesCache[$name] = SchoolClass::firstOrCreate(['name' => $name, 'level_id' => $levelId], ['created_by' => $this->userId]);
-    }
-    private function findOrCreateSubject(string $name, int $levelId) {
-        $cacheKey = $name . '_' . $levelId;
-        if (isset($this->subjectsCache[$cacheKey])) return $this->subjectsCache[$cacheKey];
-        return $this->subjectsCache[$cacheKey] = Subject::firstOrCreate(['name' => $name, 'level_id' => $levelId], ['created_by' => $this->userId]);
+    private function getSubjectsForClass(int $classId): Collection
+    {
+        if (isset($this->subjectsCache[$classId])) {
+            return $this->subjectsCache[$classId];
+        }
+
+        $class = SchoolClass::find($classId);
+        if (!$class) {
+            return collect();
+        }
+
+        $subjects = $class->subjects()->orderBy('id', 'asc')->get();
+
+        return $this->subjectsCache[$classId] = $subjects;
     }
 }
