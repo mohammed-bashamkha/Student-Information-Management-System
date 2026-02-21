@@ -26,7 +26,8 @@ class DatabaseSeeder extends Seeder
             LevelSeeder::class,
             SchoolClassSeeder::class,
             SubjectSeeder::class,
-            SchoolSeeder::class
+            SchoolSeeder::class,
+            RolePermissionSeeder::class
         ]);
     }
 }
