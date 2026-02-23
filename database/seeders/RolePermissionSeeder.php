@@ -68,6 +68,8 @@ class RolePermissionSeeder extends Seeder
 
             'الادوار.ادارة',
 
+            'السنة_الدراسية.ادارة'
+
         ];
 
         foreach ($permissions as $permission) {

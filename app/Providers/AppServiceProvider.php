@@ -24,5 +24,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manageRole', function (User $user) {
         return $user->can('الادوار.ادارة');
      });
+        Gate::define('manageAcademicYear', function (User $user) {
+            return $user->can('السنة_الدراسية.ادارة');
+        });
     }
 }

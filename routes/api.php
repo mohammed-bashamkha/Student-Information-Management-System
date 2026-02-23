@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\RoleController;
@@ -21,5 +22,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/users',UserController::class);
     // roles routes
     Route::apiResource('/roles',RoleController::class);
+    // academic year routes
+    Route::apiResource('/academic-year',AcademicYearController::class);
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
 });
