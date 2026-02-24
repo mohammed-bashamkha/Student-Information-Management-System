@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SchoolControlle;
+use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -27,5 +28,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/academic-year',AcademicYearController::class);
     // schools routes
     Route::apiResource('/schools',SchoolControlle::class);
+    // subjects routes
+    Route::apiResource('/subjects',SubjectController::class);
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
 });
