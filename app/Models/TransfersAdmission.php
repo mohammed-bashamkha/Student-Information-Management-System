@@ -19,4 +19,9 @@ class TransfersAdmission extends Model
     public function toSchool() {
         return $this->belongsTo(School::class, 'to_school_id');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

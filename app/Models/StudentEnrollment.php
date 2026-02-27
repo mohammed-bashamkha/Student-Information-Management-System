@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CertificateReplacement extends Model
+class StudentEnrollment extends Model
 {
     protected $guarded = [];
 
@@ -12,10 +12,14 @@ class CertificateReplacement extends Model
     {
         return $this->belongsTo(Student::class);
     }
-
     public function school()
     {
         return $this->belongsTo(School::class);
+    }
+
+     public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class,'class_id');
     }
 
     public function academicYear()

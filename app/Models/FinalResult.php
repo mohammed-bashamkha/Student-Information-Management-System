@@ -15,4 +15,9 @@ class FinalResult extends Model
     public function academicYear() {
         return $this->belongsTo(AcademicYear::class);
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

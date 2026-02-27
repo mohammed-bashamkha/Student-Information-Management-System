@@ -25,4 +25,9 @@ class School extends Model
     public function transfersTo() {
         return $this->hasMany(TransfersAdmission::class, 'to_school_id');
     }
+
+     public function enrollments()
+     {
+        return $this->hasMany(StudentEnrollment::class);
+     }
 }

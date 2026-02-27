@@ -33,4 +33,14 @@ class Student extends Model
     public function certificateReplacements() {
         return $this->hasMany(CertificateReplacement::class);
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(StudentEnrollment::class);
+    }
+
+    public function currentEnrollment()
+    {
+        return $this->hasOne(StudentEnrollment::class)->latestOfMany();
+    }
 }

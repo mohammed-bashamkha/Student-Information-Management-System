@@ -17,4 +17,9 @@ class AcademicYear extends Model
     public function finalResults() {
         return $this->hasMany(FinalResult::class);
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(StudentEnrollment::class);
+    }
 }
