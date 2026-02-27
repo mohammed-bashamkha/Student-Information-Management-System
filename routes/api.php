@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FinalResultController;
+use App\Http\Controllers\GradeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SchoolControlle;
@@ -33,5 +34,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/subjects',SubjectController::class);
     // school classes routes
     Route::apiResource('/school-classes',SchoolClassController::class);
+    // grades routes
+    Route::apiResource('/grades',GradeController::class);
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
 });
