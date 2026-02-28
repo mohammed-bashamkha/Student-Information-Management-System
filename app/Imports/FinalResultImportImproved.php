@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\Grade;
 use App\Models\FinalResult;
 use App\Models\SchoolClass;
+use App\Models\StudentEnrollment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,16 +28,17 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     protected $userId;
 
     private $subjectsCache = [];
-    
+
     // إحصائيات الاستيراد
     public $stats = [
-        'total_rows' => 0,
-        'successful' => 0,
-        'failed' => 0,
-        'students_created' => 0,
-        'students_updated' => 0,
-        'errors' => [],
-        'warnings' => []
+        'total_rows'          => 0,
+        'successful'          => 0,
+        'failed'              => 0,
+        'students_created'    => 0,
+        'students_updated'    => 0,
+        'enrollments_created' => 0,
+        'errors'              => [],
+        'warnings'            => []
     ];
 
     public function __construct(int $academicYearId, int $classId, int $schoolId)
@@ -65,7 +67,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         DB::transaction(function () use ($rows, $subjects) {
             foreach ($rows as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + $this->startRow();
-                
+
                 try {
                     $this->processRow($row, $subjects, $actualRowNumber);
                     $this->stats['successful']++;
@@ -79,7 +81,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                             'student_name' => $row[2] ?? 'N/A'
                         ]
                     ];
-                    
+
                     // تسجيل الخطأ
                     Log::error("خطأ في استيراد النتائج - الصف {$actualRowNumber}", [
                         'error' => $e->getMessage(),
@@ -142,10 +144,8 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         $student = Student::updateOrCreate(
             ['school_number' => $studentNumber],
             [
-                'full_name' => $studentName,
-                'school_id' => $this->schoolId,
-                'class_id' => $this->classId,
-                'created_by' => $this->userId
+                'full_name'  => $studentName,
+                'created_by' => $this->userId,
             ]
         );
 
@@ -153,6 +153,23 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             $this->stats['students_created']++;
         } else {
             $this->stats['students_updated']++;
+        }
+
+        // إنشاء أو تحديث سجل التسجيل في الصف والسنة الدراسية
+        $enrollment = StudentEnrollment::updateOrCreate(
+            [
+                'student_id'       => $student->id,
+                'academic_year_id' => $this->academicYearId,
+            ],
+            [
+                'school_id'  => $this->schoolId,
+                'class_id'   => $this->classId,
+                'created_by' => $this->userId,
+            ]
+        );
+
+        if ($enrollment->wasRecentlyCreated) {
+            $this->stats['enrollments_created']++;
         }
 
         return $student;
@@ -167,7 +184,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         foreach ($subjects as $index => $subject) {
             $firstSemesterIndex = $subjectGradesStartIndex + ($index * 3);
-            
+
             $firstSemesterGrade = $this->parseGrade($row[$firstSemesterIndex] ?? null);
             $secondSemesterGrade = $this->parseGrade($row[$firstSemesterIndex + 1] ?? null);
             $totalGrade = $this->parseGrade($row[$firstSemesterIndex + 2] ?? null);
@@ -211,7 +228,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         $finalResultStartIndex = 3 + (count($subjects) * 3);
 
         $totalStudentGrades = $this->parseGrade($row[$finalResultStartIndex] ?? null) ?? 0;
-        $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 1] ?? 'N/A');
+        $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 1] ?? null);
         $notes = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
 
         FinalResult::updateOrCreate(
@@ -236,7 +253,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         if ($value === null || $value === '') {
             return null;
         }
-        
+
         return trim((string) $value);
     }
 
@@ -251,7 +268,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         // تنظيف القيمة
         $cleaned = trim((string) $value);
-        
+
         // التحقق من أنها رقم
         if (!is_numeric($cleaned)) {
             return null;
@@ -286,16 +303,17 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     {
         return [
             'summary' => [
-                'total_rows' => $this->stats['total_rows'],
-                'successful' => $this->stats['successful'],
-                'failed' => $this->stats['failed'],
-                'students_created' => $this->stats['students_created'],
-                'students_updated' => $this->stats['students_updated'],
-                'success_rate' => $this->stats['total_rows'] > 0 
-                    ? round(($this->stats['successful'] / $this->stats['total_rows']) * 100, 2) 
+                'total_rows'          => $this->stats['total_rows'],
+                'successful'          => $this->stats['successful'],
+                'failed'              => $this->stats['failed'],
+                'students_created'    => $this->stats['students_created'],
+                'students_updated'    => $this->stats['students_updated'],
+                'enrollments_created' => $this->stats['enrollments_created'],
+                'success_rate'        => $this->stats['total_rows'] > 0
+                    ? round(($this->stats['successful'] / $this->stats['total_rows']) * 100, 2)
                     : 0
             ],
-            'errors' => $this->stats['errors'],
+            'errors'   => $this->stats['errors'],
             'warnings' => $this->stats['warnings']
         ];
     }
@@ -306,7 +324,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     public function registerEvents(): array
     {
         return [
-            BeforeImport::class => function(BeforeImport $event) {
+            BeforeImport::class => function (BeforeImport $event) {
                 Log::info('بدء استيراد النتائج النهائية', [
                     'academic_year_id' => $this->academicYearId,
                     'class_id' => $this->classId,
@@ -314,8 +332,8 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                     'user_id' => $this->userId
                 ]);
             },
-            
-            AfterImport::class => function(AfterImport $event) {
+
+            AfterImport::class => function (AfterImport $event) {
                 Log::info('انتهاء استيراد النتائج النهائية', $this->getImportReport());
             },
         ];

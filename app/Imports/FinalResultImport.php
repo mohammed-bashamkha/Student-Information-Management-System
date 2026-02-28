@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\Grade;
 use App\Models\FinalResult;
 use App\Models\SchoolClass;
+use App\Models\StudentEnrollment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -54,10 +55,21 @@ class FinalResultImport implements ToCollection, WithStartRow
                 $student = Student::updateOrCreate(
                     ['school_number' => $studentNumber],
                     [
-                        'full_name' => $studentName,
-                        'school_id' => $this->schoolId,
-                        'class_id' => $this->classId, // <-- التصحيح الثاني هنا
-                        'created_by' => $this->userId
+                        'full_name'  => $studentName,
+                        'created_by' => $this->userId,
+                    ]
+                );
+
+                // إنشاء أو تحديث سجل التسجيل في الصف
+                StudentEnrollment::updateOrCreate(
+                    [
+                        'student_id'       => $student->id,
+                        'academic_year_id' => $this->academicYearId,
+                    ],
+                    [
+                        'school_id'  => $this->schoolId,
+                        'class_id'   => $this->classId,
+                        'created_by' => $this->userId,
                     ]
                 );
 
@@ -98,6 +110,7 @@ class FinalResultImport implements ToCollection, WithStartRow
             return $this->subjectsCache[$classId];
         }
 
+        /** @var SchoolClass $class */
         $class = SchoolClass::find($classId);
         if (!$class) {
             return collect();

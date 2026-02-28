@@ -11,6 +11,7 @@ use App\Models\AcademicYear;
 use App\Models\FinalResult;
 use App\Models\SchoolClass;
 use App\Models\Subject;
+use App\Models\StudentEnrollment;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +23,9 @@ class FinalResultController extends Controller
         $query = FinalResult::with([
             'student.school',
             'student.schoolClass',
-            'student.grades.subject'
+            'student.grades.subject',
+            'student.currentEnrollment.schoolClass',
+            'student.currentEnrollment.school',
         ]);
 
         // الفلترة حسب السنة الدراسية
@@ -30,10 +33,13 @@ class FinalResultController extends Controller
             $query->where('academic_year_id', $request->academic_year_id);
         }
 
-        // الفلترة حسب الصف
+        // الفلترة حسب الصف عبر StudentEnrollment
         if ($request->filled('class_id')) {
-            $query->whereHas('student', function($q) use ($request) {
+            $query->whereHas('student.enrollments', function ($q) use ($request) {
                 $q->where('class_id', $request->class_id);
+                if ($request->filled('academic_year_id')) {
+                    $q->where('academic_year_id', $request->academic_year_id);
+                }
             });
         }
 
@@ -45,26 +51,43 @@ class FinalResultController extends Controller
         // البحث حسب اسم الطالب أو الرقم المدرسي
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->whereHas('student', function($q) use ($searchTerm) {
+            $query->whereHas('student', function ($q) use ($searchTerm) {
                 $q->where('full_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('school_number', 'LIKE', "%{$searchTerm}%");
+                    ->orWhere('school_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 
         $finalResults = $query->orderBy('id', 'desc')->paginate(10);
 
-        // جلب قائمة المواد
-        $subjectsForHeader = [];
-        if ($finalResults->isNotEmpty()) {
-            $firstResultClassId = $finalResults->first()->student->schoolClass->id;
-            $subjectsForHeader = SchoolClass::find($firstResultClassId)->subjects()->orderBy('id')->get();
+        // جلب قائمة المواد للصف المختار
+        $subjectsForHeader = collect();
+        if ($request->filled('class_id')) {
+            $classForHeader = SchoolClass::find($request->class_id);
+            if ($classForHeader) {
+                $subjectsForHeader = $classForHeader->subjects()->orderBy('id')->get();
+            }
+        } elseif ($finalResults->isNotEmpty()) {
+            // استخدام Enrollment للحصول على الصف
+            $firstStudent = $finalResults->first()->student;
+            $enrollment   = $firstStudent->currentEnrollment ?? $firstStudent->enrollments()->latest()->first();
+            $classId      = $enrollment?->class_id ?? $firstStudent->class_id;
+            if ($classId) {
+                $classForHeader = SchoolClass::find($classId);
+                if ($classForHeader) {
+                    $subjectsForHeader = $classForHeader->subjects()->orderBy('id')->get();
+                }
+            }
         }
 
         // حساب الإحصائيات
+        $baseQuery = FinalResult::query();
+        if ($request->filled('academic_year_id')) {
+            $baseQuery->where('academic_year_id', $request->academic_year_id);
+        }
         $stats = [
-            'total' => $query->count(),
-            'passed' => FinalResult::where('final_result', 'ناجح')->count(),
-            'failed' => FinalResult::where('final_result', 'راسب')->count(),
+            'total'  => $baseQuery->clone()->count(),
+            'passed' => $baseQuery->clone()->where('final_result', 'ناجح'),
+            'failed' => $baseQuery->clone()->where('final_result', 'راسب')->count(),
         ];
 
         // بيانات للفلاتر
@@ -72,20 +95,19 @@ class FinalResultController extends Controller
         $schoolClasses = SchoolClass::all();
 
         return view('final-result-index', [
-            'finalResults' => $finalResults,
-            'subjects' => $subjectsForHeader,
-            'stats' => $stats,
+            'finalResults'  => $finalResults,
+            'subjects'      => $subjectsForHeader,
+            'stats'         => $stats,
             'academicYears' => $academicYears,
             'schoolClasses' => $schoolClasses,
         ]);
     }
     public function export(Request $request)
     {
-        try
-        {
+        try {
             $request->validate([
-            'class_name' => 'required|string',
-            'academic_year_id' => 'required|integer|exists:academic_years,id',
+                'class_name' => 'required|string',
+                'academic_year_id' => 'required|integer|exists:academic_years,id',
             ]);
 
             $className = $request->class_name;
@@ -99,9 +121,7 @@ class FinalResultController extends Controller
                 new FinalResultExport($className, $academicYearId),
                 $fileName
             );
-        }
-        catch (\Exception $e)
-        {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to export final results: ' . $e->getMessage(),
@@ -110,9 +130,9 @@ class FinalResultController extends Controller
     }
     public function showImport()
     {
-         // التعديل هنا: استخدام 'year' بدلاً من 'name' للترتيب
+        // التعديل هنا: استخدام 'year' بدلاً من 'name' للترتيب
         $academicYears = AcademicYear::orderBy('year', 'desc')->get();
-        $school_classes = SchoolClass::where(['level_id'=> 1])->get();
+        $school_classes = SchoolClass::where(['level_id' => 1])->get();
         $schools = School::all();
 
         return view('import', [
@@ -157,7 +177,6 @@ class FinalResultController extends Controller
             return redirect()->back()
                 ->with('success', 'تم استيراد النتائج النهائية بنجاح')
                 ->with('import_report', $report);
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء الاستيراد: ' . $e->getMessage())

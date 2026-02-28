@@ -339,7 +339,15 @@
                                 <tr>
                                     <td>{{ $loop->iteration + $finalResults->firstItem() - 1 }}</td>
                                     <td class="text-nowrap fw-bold">{{ $result->student->full_name }}</td>
-                                    <td class="text-nowrap">{{ $result->student->schoolClass->name }}</td>
+                                    <td class="text-nowrap">
+                                        @php
+                                            $enrollment = $result->student->currentEnrollment;
+                                            $className  = $enrollment?->schoolClass?->name
+                                                       ?? $result->student->schoolClass?->name
+                                                       ?? '—';
+                                        @endphp
+                                        {{ $className }}
+                                    </td>
 
                                     <!-- المرور على المواد وعرض درجة الطالب في كل مادة -->
                                     @foreach ($subjects as $subject)
@@ -357,9 +365,13 @@
                                             <span class="badge bg-success">
                                                 <i class="fas fa-check me-1"></i>{{ $result->final_result }}
                                             </span>
-                                        @else
+                                        @elseif($result->final_result == 'راسب')
                                             <span class="badge bg-danger">
                                                 <i class="fas fa-times me-1"></i>{{ $result->final_result }}
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-minus me-1"></i>{{ $result->final_result ?? 'غير محدد' }}
                                             </span>
                                         @endif
                                     </td>

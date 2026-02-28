@@ -258,7 +258,11 @@
                                 </div>
                                 <div class="stat-box">
                                     <h4>{{ $report['summary']['students_updated'] }}</h4>
-                                    <p>طلاب محدثين</p>
+                                    <p>طلاب محدّثون</p>
+                                </div>
+                                <div class="stat-box" style="border-top: 3px solid #667eea;">
+                                    <h4 style="color:#667eea;">{{ $report['summary']['enrollments_created'] ?? 0 }}</h4>
+                                    <p>تسجيلات جديدة</p>
                                 </div>
                             </div>
 
