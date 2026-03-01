@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Grade;
+use App\Models\StudentEnrollment;
+use App\Models\Subject;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +44,16 @@ class GradeController extends Controller
             'second_semester_total' => 'required|numeric|min:0|max:50',
             'total' => 'required|numeric|min:0|max:100',
         ]);
+        $subject = Subject::find($request->subject_id);
+        $enrollment = StudentEnrollment::where('student_id', $request->student_id)
+        ->where('academic_year_id', $request->academic_year_id)
+        ->with('schoolClass')
+        ->first();
+        if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
+            return response()->json([
+                'message' => 'الطالب غير مسجل في هذا المقرر لهذا العام الدراسي'
+            ], 422);
+        }
         $data['created_by'] = Auth::id();
         $grade = Grade::create($data);
         return response()->json([
@@ -75,6 +87,7 @@ class GradeController extends Controller
     {
         $grade = Grade::findOrFail($id);
         $this->authorize('update', $grade);
+        
         $data = $request->validate([
             'student_id' => 'required|exists:students,id',
             'subject_id' => 'required|exists:subjects,id',
@@ -83,6 +96,22 @@ class GradeController extends Controller
             'second_semester_total' => 'required|numeric|min:0|max:50',
             'total' => 'required|numeric|min:0|max:100',
         ]);
+
+        $subject = Subject::find($request->subject_id);
+        $enrollment = StudentEnrollment::where('student_id', $request->student_id)
+        ->where('academic_year_id', $request->academic_year_id)
+        ->with('schoolClass')
+        ->first();
+        if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
+            return response()->json([
+                'message' => "الطالب غير مسجل في مقرر ($subject->name) لهذا العام الدراسي"
+            ], 422);
+        }
+        if($grade->id !== $grade->student_id || $grade->id !== $grade->subject_id || $grade->id !== $grade->academic_year_id){
+            return response()->json([
+                'message' => 'لا يمكن تغيير الطالب أو المقرر أو العام الدراسي لهذه الدرجة'
+            ], 422);
+        }
         $grade->update($data);
         return response()->json([
             'message' => 'تم تحديث الدرجة بنجاح',
