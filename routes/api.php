@@ -7,6 +7,7 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SchoolControlle;
+use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -22,6 +23,9 @@ Route::get('/user', function (Request $request) {
 Route::post('/login',[AuthController::class,'login'])->name('login');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
+    /**
+     * @authenticated
+     */
     // users routes
     Route::apiResource('/users',UserController::class);
     // roles routes
@@ -36,5 +40,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/school-classes',SchoolClassController::class);
     // grades routes
     Route::apiResource('/grades',GradeController::class);
+    // students route
+    Route::apiResource('/students',StudentController::class);
+    Route::post('/students-search', [StudentController::class, 'studentsSearch'])->name('students.search');
+
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
-});
+    });
