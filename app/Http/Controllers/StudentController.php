@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreStudentWithEnrollmentRequest;
 use App\Http\Requests\UpdateStudentWithEnrollmentRequest;
+use App\Models\Error;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -139,6 +140,28 @@ class StudentController extends Controller
 
     DB::transaction(function () use ($student, $request) {
 
+
+        $fieldsToTrack = [
+            'full_name', 'school_number', 'seat_number', 
+            'gender', 'school_id', 'class_id', 'date_of_birth'];
+
+        foreach ($fieldsToTrack as $field) 
+        {
+            if ($request->has($field) && $request->input($field) != $student->$field) {
+                Error::create([
+                    'student_id'       => $student->id,
+                    'field_name'       => $field,                    // اسم الحقل (مثلاً: full_name)
+                    'old_value'        => $student->$field,          // الاسم الخطأ (القديم)
+                    'new_value'        => $request->input($field), 
+                    'academic_year_id' => $request->input('academic_year_id'),
+                    'reason'           => $request->input('reason'),
+                    'school_id'        => $request->input('school_id'),
+                    'class_id'        => $request->input('class_id'),
+                    'createdBy'          => Auth::id(),      
+                ]);
+            }
+        }
+
         $student->update($request->only([
             'school_number', 'seat_number', 'full_name', 'nationality',
             'gender', 'date_of_birth', 'registration_date'
@@ -155,17 +178,18 @@ class StudentController extends Controller
                 'created_by' => Auth::id()
             ]
         );
+
     });
 
-    $student->load(['enrollments' => function($query) use ($request) {
-        $query->where('academic_year_id', $request->academic_year_id)
-              ->with(['school', 'schoolClass']);
-    }]);
+        $student->load(['enrollments' => function($query) use ($request) {
+            $query->where('academic_year_id', $request->academic_year_id)
+                ->with(['school', 'schoolClass']);
+        }]);
 
-    return response()->json([
-        'message' => 'تم تعديل بيانات الطالب والتسجيل بنجاح',
-        'data' => $student
-    ], 200);
+        return response()->json([
+            'message' => 'تم تعديل بيانات الطالب والتسجيل بنجاح',
+            'data' => $student
+        ], 200);
     }
 
     /**

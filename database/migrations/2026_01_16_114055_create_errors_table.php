@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('errors', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('created_by')->constrained('users');
-            $table->foreignId('incorrect_student_id')->constrained('students');
-            $table->foreignId('correct_student_id')->constrained('students');
-            $table->foreignId('class_id')->constrained('school_classes');
-            $table->foreignId('school_id')->constrained('schools');
-            $table->foreignId('academic_year_id')->constrained('academic_years');
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->string('field_name');
+            $table->text('old_value')->nullable();
+            $table->text('new_value')->nullable();
+            $table->string('reason')->nullable();
+            $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
+            $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
+            $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
+            $table->foreignId('createdBy')->constrained('users');
             $table->timestamps();
         });
     }

@@ -27,8 +27,9 @@ class UpdateStudentWithEnrollmentRequest extends FormRequest
         'date_of_birth' => 'nullable|date',
         'registration_date' => 'nullable|date',
         'school_id' => 'required|exists:schools,id',
-        'class_id' => 'required|exists:school_classes,id', // تأكد من اسم جدول الفصول لديك
-        'academic_year_id' => 'required|exists:academic_years,id'
+        'class_id' => 'required|exists:school_classes,id',
+        'academic_year_id' => 'required|exists:academic_years,id',
+        'reason' => 'nullable|string|max:255',
         ];
     }
 }

@@ -8,13 +8,9 @@ class Error extends Model
 {
     protected $guarded = [];
 
-    public function incorrectStudent()
+    public function student()
     {
-        return $this->belongsTo(Student::class,'incorrect_student_id');
-    }
-    public function correctStudent()
-    {
-        return $this->belongsTo(Student::class,'correct_student_id');
+        return $this->belongsTo(Student::class);
     }
     public function schoolClass()
     {
