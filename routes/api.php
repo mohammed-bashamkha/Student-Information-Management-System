@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CertificateReplacementController;
 use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\RoleController;
@@ -43,6 +44,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // students route
     Route::apiResource('/students',StudentController::class);
     Route::post('/students-search', [StudentController::class, 'studentsSearch'])->name('students.search');
+    // certificate replacements routes
+    Route::apiResource('/certificate-replacements',CertificateReplacementController::class);
 
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
     });

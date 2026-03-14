@@ -18,6 +18,11 @@ class CertificateReplacement extends Model
         return $this->belongsTo(School::class);
     }
 
+    public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+
     public function academicYear()
     {
         return $this->belongsTo(AcademicYear::class);

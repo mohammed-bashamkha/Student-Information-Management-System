@@ -16,9 +16,11 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('student_id')->constrained('students');
             $table->foreignId('school_id')->constrained('schools');
+            $table->foreignId('class_id')->constrained('school_classes');
             $table->foreignId('academic_year_id')->constrained('academic_years');
             $table->string('certificate_type');
-            $table->string('section')->nullable();
+            $table->text('notes')->nullable();
+            $table->date('request_date');
             $table->timestamps();
         });
     }

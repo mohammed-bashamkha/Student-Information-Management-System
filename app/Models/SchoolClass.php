@@ -34,4 +34,9 @@ class SchoolClass extends Model
     {
         return $this->hasMany(StudentEnrollment::class);
     }
+
+    public function certificateReplacements()
+    {
+        return $this->hasMany(CertificateReplacement::class);
+    }
 }
