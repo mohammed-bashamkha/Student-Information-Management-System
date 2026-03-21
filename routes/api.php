@@ -10,6 +10,7 @@ use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SchoolControlle;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TransferAdmissionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -43,9 +44,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/grades',GradeController::class);
     // students route
     Route::apiResource('/students',StudentController::class);
-    Route::post('/students-search', [StudentController::class, 'studentsSearch'])->name('students.search');
     // certificate replacements routes
     Route::apiResource('/certificate-replacements',CertificateReplacementController::class);
-
+    // transfers admissions routes
+    Route::apiResource('/transfers-admissions',TransferAdmissionController::class)->except('store');
+    Route::post('/transfers', [TransferAdmissionController::class, 'storeTransfer']);
+    Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission']);
     Route::post('/logout',[AuthController::class,'logout'])->name('logout');
     });

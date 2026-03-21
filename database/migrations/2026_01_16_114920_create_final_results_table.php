@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('final_result');
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->unique(['student_id', 'academic_year_id'], 'student_year_unique_result');
         });
     }
 

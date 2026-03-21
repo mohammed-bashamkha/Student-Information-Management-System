@@ -20,6 +20,14 @@ class TransfersAdmission extends Model
         return $this->belongsTo(School::class, 'to_school_id');
     }
 
+    public function schoolClass() {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+
+    public function academicYear() {
+        return $this->belongsTo(AcademicYear::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

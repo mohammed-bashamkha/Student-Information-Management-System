@@ -15,10 +15,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('created_by')->constrained('users');
             $table->enum('type', ['transfer', 'admission']);
-            $table->foreignId('student_id')->constrained('students');
-            $table->foreignId('from_school_id')->nullable()->constrained('schools');
-            $table->foreignId('to_school_id')->constrained('schools');
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->foreignId('from_school_id')->nullable()->constrained('schools')->cascadeOnDelete();
+            $table->foreignId('to_school_id')->constrained('schools')->cascadeOnDelete();
+            $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
+            $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
             $table->date('request_date');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->string('based_on')->nullable();
             $table->date('approval_date')->nullable();
             $table->text('reason')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
