@@ -19,7 +19,6 @@ class FinalResultController extends Controller
 {
     public function index(Request $request)
     {
-        // بناء الاستعلام الأساسي
         $query = FinalResult::with([
             'student.school',
             'student.schoolClass',
@@ -28,12 +27,10 @@ class FinalResultController extends Controller
             'student.currentEnrollment.school',
         ]);
 
-        // الفلترة حسب السنة الدراسية
         if ($request->filled('academic_year_id')) {
             $query->where('academic_year_id', $request->academic_year_id);
         }
 
-        // الفلترة حسب الصف عبر StudentEnrollment
         if ($request->filled('class_id')) {
             $query->whereHas('student.enrollments', function ($q) use ($request) {
                 $q->where('class_id', $request->class_id);
@@ -43,12 +40,10 @@ class FinalResultController extends Controller
             });
         }
 
-        // الفلترة حسب النتيجة النهائية
         if ($request->filled('final_result')) {
             $query->where('final_result', $request->final_result);
         }
 
-        // البحث حسب اسم الطالب أو الرقم المدرسي
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->whereHas('student', function ($q) use ($searchTerm) {
@@ -59,7 +54,6 @@ class FinalResultController extends Controller
 
         $finalResults = $query->orderBy('id', 'desc')->paginate(10);
 
-        // جلب قائمة المواد للصف المختار
         $subjectsForHeader = collect();
         if ($request->filled('class_id')) {
             $classForHeader = SchoolClass::find($request->class_id);
@@ -67,7 +61,6 @@ class FinalResultController extends Controller
                 $subjectsForHeader = $classForHeader->subjects()->orderBy('id')->get();
             }
         } elseif ($finalResults->isNotEmpty()) {
-            // استخدام Enrollment للحصول على الصف
             $firstStudent = $finalResults->first()->student;
             $enrollment   = $firstStudent->currentEnrollment ?? $firstStudent->enrollments()->latest()->first();
             $classId      = $enrollment?->class_id ?? $firstStudent->class_id;
@@ -79,7 +72,6 @@ class FinalResultController extends Controller
             }
         }
 
-        // حساب الإحصائيات
         $baseQuery = FinalResult::query();
         if ($request->filled('academic_year_id')) {
             $baseQuery->where('academic_year_id', $request->academic_year_id);
@@ -89,7 +81,6 @@ class FinalResultController extends Controller
             'passed' => $baseQuery->clone()->where('final_result', 'ناجح'),
             'failed' => $baseQuery->clone()->where('final_result', 'راسب')->count(),
         ];
-
         // بيانات للفلاتر
         $academicYears = AcademicYear::orderBy('year', 'desc')->get();
         $schoolClasses = SchoolClass::all();
@@ -102,35 +93,8 @@ class FinalResultController extends Controller
             'schoolClasses' => $schoolClasses,
         ]);
     }
-    public function export(Request $request)
-    {
-        try {
-            $request->validate([
-                'class_name' => 'required|string',
-                'academic_year_id' => 'required|integer|exists:academic_years,id',
-            ]);
-
-            $className = $request->class_name;
-            $academicYearId = $request->academic_year_id;
-
-            $academicYear = AcademicYear::findOrFail($academicYearId);
-
-            $fileName = 'final_result_' . $className . '_year_' . $academicYear->year . '.xlsx';
-
-            return Excel::download(
-                new FinalResultExport($className, $academicYearId),
-                $fileName
-            );
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to export final results: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
     public function showImport()
     {
-        // التعديل هنا: استخدام 'year' بدلاً من 'name' للترتيب
         $academicYears = AcademicYear::orderBy('year', 'desc')->get();
         $school_classes = SchoolClass::where(['level_id' => 1])->get();
         $schools = School::all();
@@ -163,10 +127,8 @@ class FinalResultController extends Controller
             );
 
             Excel::import($import, $request->file('file'));
-
             // الحصول على تقرير الاستيراد
             $report = $import->getImportReport();
-
             // التحقق من وجود أخطاء
             if ($report['summary']['failed'] > 0) {
                 return redirect()->back()
@@ -184,9 +146,6 @@ class FinalResultController extends Controller
         }
     }
 
-    /**
-     * عرض تفاصيل نتيجة طالب معين
-     */
     public function show($id)
     {
         $finalResult = FinalResult::with([

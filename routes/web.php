@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\FinalResultController;
+use App\Http\Controllers\FinalResultImportController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,7 +15,7 @@ Route::get('/export/final-result', [FinalResultController::class, 'export'])
 Route::get('/import/final-result', [FinalResultController::class, 'showImport'])
     ->name('import.form');
 
-Route::post('/import/final-result', [FinalResultController::class, 'import'])
+Route::post('/import/final-result', [FinalResultImportController::class, 'importImproved'])
     ->name('import.submit');
 
 Route::get('/final-results', [FinalResultController::class, 'index']);
