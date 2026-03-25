@@ -3,36 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Exports\FinalResultExport;
-use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FinalResultExportController extends Controller
 {
-    public function export(Request $request)
+    public function exportFinalResults(Request $request)
     {
-        try {
-            $request->validate([
-                'class_name' => 'required|string',
-                'academic_year_id' => 'required|integer|exists:academic_years,id',
-            ]);
+        // التحقق من أن الفلاتر الثلاثة تم إرسالها وهي موجودة في الجداول
+        $request->validate([
+            'school_id' => 'required|exists:schools,id',
+            'class_id' => 'required|exists:school_classes,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
+        ]);
 
-            $className = $request->class_name;
-            $academicYearId = $request->academic_year_id;
+        $schoolId = $request->school_id;
+        $classId = $request->class_id;
+        $academicYearId = $request->academic_year_id;
 
-            $academicYear = AcademicYear::findOrFail($academicYearId);
+        $fileName = 'Final_Results_' . now()->format('Y_m_d_H_i') . '.xlsx';
 
-            $fileName = 'final_result_' . $className . '_year_' . $academicYear->year . '.xlsx';
-
-            return Excel::download(
-                new FinalResultExport($className, $academicYearId),
-                $fileName
-            );
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to export final results: ' . $e->getMessage(),
-            ], 500);
-        }
+        // استدعاء ملف التصدير مع تمرير الفلاتر
+        return Excel::download(
+            new FinalResultExport($schoolId, $classId, $academicYearId), 
+            $fileName
+        );
     }
 }

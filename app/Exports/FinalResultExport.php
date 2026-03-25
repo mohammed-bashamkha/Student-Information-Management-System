@@ -2,98 +2,43 @@
 
 namespace App\Exports;
 
-use App\Models\Student;
-use App\Models\Subject;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class FinalResultExport implements FromCollection, WithHeadings
+class FinalResultExport implements WithMultipleSheets
 {
-    protected $className;
-    protected $academicYearId;
-    protected $subjects;
+    protected $schoolId, $classId, $academicYearId;
 
-    public function __construct(string $className, int $academicYearId)
+    public function __construct($schoolId, $classId, $academicYearId)
     {
-        $this->className = $className;
+        $this->schoolId = $schoolId;
+        $this->classId = $classId;
         $this->academicYearId = $academicYearId;
-
-        // جلب مواد الصف (عن طريق المستوى)
-        $this->subjects = Subject::whereHas('level.classes', function ($q) {
-            $q->where('name', $this->className);
-        })->orderBy('id')->get();
     }
 
-    /**
-     * العناوين (ديناميكية)
-     */
-    public function headings(): array
+    public function sheets(): array
     {
-        $headings = [
-            'Level',
-            'Class',
-            'School Name',
-            'Student Name',
-            'Student Number',
+        $sheets = [];
+
+        // تعريف الأوراق المطلوبة (الاسم، الحالة في قاعدة البيانات)
+        $categories = [
+            ['title' => 'الطلاب الناجحون', 'status' => 'ناجح'],
+            ['title' => 'الطالبات الناجحات', 'status' => 'ناجحة'],
+            ['title' => 'الطلاب الراسبون', 'status' => 'راسب'],
+            ['title' => 'الطالبات الراسبات', 'status' => 'راسبة'],
+            ['title' => 'الطلاب الغائبون', 'status' => 'غائب'],
+            ['title' => 'الطالبات الغائبات', 'status' => 'غائبة'],
         ];
 
-        foreach ($this->subjects as $subject) {
-            $headings[] = $subject->name . ' T1';
-            $headings[] = $subject->name . ' T2';
-            $headings[] = $subject->name . ' Total';
+        foreach ($categories as $cat) {
+            $sheets[] = new ResultSheetExport(
+                $this->schoolId, 
+                $this->classId, 
+                $this->academicYearId, 
+                $cat['status'], 
+                $cat['title']
+            );
         }
 
-        $headings[] = 'Total Result';
-        $headings[] = 'Final Result';
-        $headings[] = 'Notes';
-
-        return $headings;
-    }
-
-    /**
-     * البيانات
-     */
-    public function collection()
-    {
-        $students = Student::whereHas('schoolClass', function ($q) {
-            $q->where('name', $this->className);
-        })->with([
-            'schoolClass.level',
-            'grades' => function ($q) {
-                $q->where('academic_year_id', $this->academicYearId);
-            },
-            'finalResult' => function ($q) {
-                $q->where('academic_year_id', $this->academicYearId);
-            }
-        ])->orderBy('full_name')->get();
-
-        $rows = collect();
-
-        foreach ($students as $student) {
-            $row = [
-                $student->schoolClass->level->name,
-                $student->schoolClass->name,
-                $student->school->name,
-                $student->full_name,
-                $student->school_number,
-            ];
-
-            foreach ($this->subjects as $subject) {
-                $grade = $student->grades
-                    ->firstWhere('subject_id', $subject->id);
-
-                $row[] = $grade->first_semester_total ?? '';
-                $row[] = $grade->second_semester_total ?? '';
-                $row[] = $grade->total ?? '';
-            }
-
-            $row[] = optional($student->finalResult)->total_student_grades;
-            $row[] = optional($student->finalResult)->final_result;
-            $row[] = optional($student->finalResult)->notes;
-
-            $rows->push($row);
-        }
-
-        return $rows;
+        return $sheets;
     }
 }

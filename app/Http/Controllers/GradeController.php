@@ -31,7 +31,7 @@ class GradeController extends Controller
             'academic_year_id' => 'required|exists:academic_years,id',
             'first_semester_total' => 'required|numeric|min:0|max:50',
             'second_semester_total' => 'required|numeric|min:0|max:50',
-            'total' => 'required|numeric|min:0|max:100',
+            // 'total' => 'required|numeric|min:0|max:100',
         ]);
         $subject = Subject::find($request->subject_id);
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
@@ -43,6 +43,8 @@ class GradeController extends Controller
                 'message' => 'الطالب غير مسجل في هذا المقرر لهذا العام الدراسي'
             ], 422);
         }
+        $totalSemesteres = $request->first_semester_total + $request->second_semester_total;
+        $data['total'] = $totalSemesteres;
         $data['created_by'] = Auth::id();
             $grade = DB::transaction(function () use ($data) {
             $grade = Grade::create($data);
@@ -118,65 +120,71 @@ class GradeController extends Controller
     }
 
     protected function checkAndCalculateFinalResult($studentId, $academicYearId)
-    {
-        // 1. جلب بيانات تسجيل الطالب لمعرفة المواد المطلوبة منه في فصله الدراسي
-        $enrollment = StudentEnrollment::where('student_id', $studentId)
-            ->where('academic_year_id', $academicYearId)
-            ->with('schoolClass.subjects')
-            ->first();
+{
+    // 1. جلب بيانات تسجيل الطالب ومعرفة الطالب نفسه للجنس
+    $enrollment = StudentEnrollment::where('student_id', $studentId)
+        ->where('academic_year_id', $academicYearId)
+        ->with(['schoolClass.subjects', 'student'])
+        ->first();
 
-        if (!$enrollment) return;
+    if (!$enrollment) return;
 
-        // 2. عدد المواد المطلوب دراستها لهذا الفصل
-        $requiredSubjectsCount = $enrollment->schoolClass->subjects->count();
+    $student = $enrollment->student;
+    $isMale = $student->gender === 'male';
 
-        // 3. جلب الدرجات التي تم رصدها فعلياً للطالب في هذه السنة
-        $recordedGrades = Grade::where('student_id', $studentId)
-            ->where('academic_year_id', $academicYearId)
-            ->get();
+    // 2. عدد المواد المطلوب دراستها لهذا الصف
+    $requiredSubjectsCount = $enrollment->schoolClass->subjects->count();
 
-        // 4. الفحص: هل رصدنا درجات لجميع المواد؟
-        if ($recordedGrades->count() === $requiredSubjectsCount && $requiredSubjectsCount > 0) {
-            
-            $totalSum = $recordedGrades->sum('total');
-            $average = $totalSum / $requiredSubjectsCount;
+    // 3. جلب الدرجات التي تم رصدها فعلياً
+    $recordedGrades = Grade::where('student_id', $studentId)
+        ->where('academic_year_id', $academicYearId)
+        ->get();
 
-            // تحديد الحالة بناءً على المعدل (يمكنك تعديل الشرط حسب قوانينكم)
-            // مثال: إذا كان مجموع أي مادة أقل من 50 يعتبر "fail"
-            $hasFailedSubject = $recordedGrades->where('total', '<', 50)->count() > 0;
-            
-            $checkGender = Student::find($studentId);
-            if ($checkGender->gender == 'male') {
-                $finalStatus = 'ناجح';
-                if ($hasFailedSubject) {
-                    $finalStatus = 'راسب';
-                } elseif ($average < 50) {
-                    $finalStatus = 'راسب';
-                }
-            }else {
-                $finalStatus = 'ناجحة';
-                if ($hasFailedSubject) {
-                    $finalStatus = 'راسبة';
-                } elseif ($average < 50) {
-                    $finalStatus = 'راسبة';
-                }
-            }
+    $recordedCount = $recordedGrades->count();
 
-            // 5. حفظ أو تحديث النتيجة النهائية
-            FinalResult::updateOrCreate(
-                [
-                    'student_id' => $studentId,
-                    'academic_year_id' => $academicYearId,
-                ],
-                [
-                    'total_student_grades' => $totalSum,
-                    'average_grade' => $average,
-                    'final_result' => $finalStatus,
-                    'created_by' => Auth::id(),
-                    'notes' => 'تم الحساب تلقائياً بعد رصد آخر درجة.'
-                ]
-            );
+    // 4. تحديد الحالة النهائية (ناجح، راسب، غائب)
+    if ($recordedCount > 0 && $recordedCount < $requiredSubjectsCount) {
+        // حالة الغياب: إذا رصدنا بعض المواد ولم نكمل البقية
+        $finalStatus = $isMale ? 'غائب' : 'غائبة';
+        $totalSum = $recordedGrades->sum('total');
+        $average = $requiredSubjectsCount > 0 ? ($totalSum / $requiredSubjectsCount) : 0;
+        $notes = "لم يتم رصد جميع الدرجات ($recordedCount من أصل $requiredSubjectsCount).";
+    } 
+    elseif ($recordedCount === $requiredSubjectsCount && $requiredSubjectsCount > 0) {
+        // حالة اكتمال الدرجات: فحص النجاح والرسوب
+        $totalSum = $recordedGrades->sum('total');
+        $average = $totalSum / $requiredSubjectsCount;
+        
+        // فحص إذا كان لديه مادة أقل من 50
+        $hasFailedSubject = $recordedGrades->where('total', '<', 50)->count() > 0;
+
+        if ($hasFailedSubject || $average < 50) {
+            $finalStatus = $isMale ? 'راسب' : 'راسبة';
+        } else {
+            $finalStatus = $isMale ? 'ناجح' : 'ناجحة';
         }
+        $notes = 'تم الحساب تلقائياً بعد اكتمال رصد الدرجات.';
+    } 
+    else {
+        // إذا لم يتم رصد أي درجة إطلاقاً
+        return; 
     }
+
+    // 5. حفظ أو تحديث النتيجة النهائية
+    FinalResult::updateOrCreate(
+        [
+            'student_id' => $studentId,
+            'academic_year_id' => $academicYearId,
+        ],
+        [
+            'total_student_grades' => $totalSum,
+            'average_grade' => $average,
+            'final_result' => $finalStatus,
+            'created_by' => Auth::id() ?? $studentId, // في حال التشغيل من التعديل
+            'notes' => $notes
+        ]
+    );
+}
+
 
 }
