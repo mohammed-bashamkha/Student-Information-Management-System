@@ -107,7 +107,7 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
             }
         }
         $fr = $student->finalResult;
-        return array_merge($row, [$fr->total_student_grades ?? '-', $fr->average_grade ?? '-', $fr->final_result ?? '-', $fr->notes ?? '-']);
+        return array_merge($row, [$fr->total_student_grades ?? '-', $fr->average_grade ?? null, $fr->final_result ?? '-', $fr->notes ?? '-']);
     }
 
     public function registerEvents(): array

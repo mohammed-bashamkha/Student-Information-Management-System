@@ -51,7 +51,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
     public function startRow(): int
     {
-        return 5;
+        return 13;
     }
 
     public function collection(Collection $rows)
@@ -228,8 +228,9 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         $finalResultStartIndex = 3 + (count($subjects) * 3);
 
         $totalStudentGrades = $this->parseGrade($row[$finalResultStartIndex] ?? null) ?? 0;
-        $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 1] ?? null);
-        $notes = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
+        $gpa = $this->sanitizeValue($row[$finalResultStartIndex + 1] ?? null);
+        $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
+        $notes = $this->sanitizeValue($row[$finalResultStartIndex + 3] ?? null);
 
         FinalResult::updateOrCreate(
             [
@@ -238,6 +239,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             ],
             [
                 'total_student_grades' => $totalStudentGrades,
+                'average_grade' => $gpa,
                 'final_result' => $finalResult,
                 'notes' => $notes,
                 'created_by' => $this->userId
