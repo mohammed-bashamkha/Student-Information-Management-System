@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCertificateReplacementReuest;
+use App\Http\Requests\UpdateCertificateReplacementReuest;
 use App\Models\CertificateReplacement;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -46,19 +48,11 @@ class CertificateReplacementController extends Controller
         return response()->json($certificates, 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreCertificateReplacementReuest $request)
     {
         $this->authorize('create', CertificateReplacement::class);
 
-        $data = $request->validate([
-            'student_id'       => 'required|exists:students,id',
-            'school_id'        => 'required|exists:schools,id',
-            'class_id'        => 'required|exists:schools,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'certificate_type' => 'required|string|max:100',
-            'notes'            => 'nullable|string|max:500',
-            'request_date'     => 'required|string|date',
-        ]);
+        $data = $request->validated();
 
         $data['created_by'] = Auth::id();
 
@@ -78,16 +72,12 @@ class CertificateReplacementController extends Controller
         return response()->json(['data' => $certificate], 200);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateCertificateReplacementReuest $request, $id)
     {
         $certificate = CertificateReplacement::findOrFail($id);
         $this->authorize('update', $certificate);
 
-        $data = $request->validate([
-            'certificate_type' => 'required|string|max:100',
-            'notes'            => 'nullable|string|max:500',
-            'request_date'     => 'nullable|string|date'
-        ]);
+        $data = $request->validated();
 
         $certificate->update($data);
 

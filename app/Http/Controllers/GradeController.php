@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreGradeRequest;
+use App\Http\Requests\UpdateGradeRequest;
 use App\Models\FinalResult;
 use App\Models\Grade;
 use App\Models\Student;
@@ -22,17 +24,10 @@ class GradeController extends Controller
         return response()->json($grades);
     }
 
-    public function store(Request $request)
+    public function store(StoreGradeRequest $request)
     {
         $this->authorize('create',Grade::class);
-        $data = $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'subject_id' => 'required|exists:subjects,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'first_semester_total' => 'required|numeric|min:0|max:50',
-            'second_semester_total' => 'required|numeric|min:0|max:50',
-            // 'total' => 'required|numeric|min:0|max:100',
-        ]);
+        $data = $request->validated();
         $subject = Subject::find($request->subject_id);
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
         ->where('academic_year_id', $request->academic_year_id)
@@ -68,20 +63,12 @@ class GradeController extends Controller
         return response()->json($grade);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateGradeRequest $request, string $id)
     {
         $grade = Grade::findOrFail($id);
         $this->authorize('update', $grade);
 
-        $data = $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'subject_id' => 'required|exists:subjects,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'first_semester_total' => 'required|numeric|min:0|max:50',
-            'second_semester_total' => 'required|numeric|min:0|max:50',
-            'total' => 'required|numeric|min:0|max:100',
-        ]);
-
+        $data = $request->validated();
         $subject = Subject::find($request->subject_id);
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
         ->where('academic_year_id', $request->academic_year_id)
