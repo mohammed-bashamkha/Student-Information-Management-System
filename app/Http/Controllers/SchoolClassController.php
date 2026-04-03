@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SchoolClassRequest;
 use App\Models\SchoolClass;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -10,9 +11,6 @@ use Illuminate\Support\Facades\Auth;
 class SchoolClassController extends Controller
 {
     use AuthorizesRequests;
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $this->authorize('viewAny', SchoolClass::class);
@@ -20,24 +18,10 @@ class SchoolClassController extends Controller
         return response()->json($schoolClasses, 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(SchoolClassRequest $request)
     {
         $this->authorize('manageSchoolClass', SchoolClass::class);
-        $data = $request->validate([
-            'name' => 'required|string|max:50',
-            'level_id' => 'required|exists:levels,id',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = Auth::id();
         $schoolClass = SchoolClass::create($data);
         return response()->json([
@@ -46,33 +30,16 @@ class SchoolClassController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(SchoolClassRequest $request, string $id)
     {
         $schoolClass = SchoolClass::findOrFail($id);
         $this->authorize('manageSchoolClass', $schoolClass);
-        $data = $request->validate([
-            'name' => 'required|string|max:50',
-            'level_id' => 'required|exists:levels,id',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = Auth::id();
         $schoolClass->update($data);
         return response()->json([
@@ -80,10 +47,7 @@ class SchoolClassController extends Controller
             'data' => $schoolClass
         ], 202);
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
+    
     public function destroy(string $id)
     {
         $schoolClass = SchoolClass::findOrFail($id);

@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     use AuthorizesRequests;
     public function index()
     {
@@ -21,27 +18,10 @@ class UserController extends Controller
         return response()->json($users,200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
         $this->authorize('create', User::class);
-        $validate = $request->validate([
-        'name' => 'sometimes|string|max:255',
-        'email' => 'sometimes|email|unique:users,email',
-        'password' => 'required|string|min:8|confirmed',
-        'roles' => 'array|nullable',
-        'roles.*' => 'string|exists:roles,name'
-        ]);
+        $validate = $request->validated();
 
         $user = User::create([
         'name' => $validate['name'],
@@ -59,9 +39,6 @@ class UserController extends Controller
         ],201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $user = User::with('roles')->findOrFail($id);
@@ -69,17 +46,6 @@ class UserController extends Controller
         return response()->json($user,200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $validate = $request->validate([
@@ -110,9 +76,6 @@ class UserController extends Controller
         ],202);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);

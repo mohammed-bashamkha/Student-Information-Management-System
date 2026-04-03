@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAdmissionRequest;
+use App\Http\Requests\StoreTransferRequest;
+use App\Http\Requests\UpdateTransfersAdmissionRequest;
 use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
 use Illuminate\Validation\ValidationException;
@@ -36,20 +39,11 @@ class TransferAdmissionController extends Controller
         return response()->json($transfers, 200);
     }
 
-    public function storeTransfer(Request $request)
+    public function storeTransfer(StoreTransferRequest $request)
     {
         $this->authorize('create', TransfersAdmission::class);
 
-        $data = $request->validate([
-            'student_id'       => 'required|exists:students,id',
-            'from_school_id'   => 'required|exists:schools,id',
-            'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
-            'class_id'         => 'required|exists:school_classes,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'request_date'     => 'required|date',
-            'reason'           => 'nullable|string',
-            'based_on'         => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
         $existingRequest = TransfersAdmission::where('student_id', $data['student_id'])
             ->where('type', 'transfer')
@@ -80,22 +74,11 @@ class TransferAdmissionController extends Controller
         ], 201);
     }
 
-    public function storeAdmission(Request $request)
+    public function storeAdmission(StoreAdmissionRequest $request)
 {
     $this->authorize('create', TransfersAdmission::class);
 
-    $data = $request->validate([
-        'student_id'       => 'required|exists:students,id',
-        'from_school_id'   => 'required|exists:schools,id',
-        'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
-        'academic_year_id' => 'required|exists:academic_years,id',
-        'class_id'         => 'required|exists:school_classes,id',
-        'request_date'     => 'required|date',
-        'reason'           => 'nullable|string',
-        'start_date'       => 'required|date',
-        'end_date'         => 'required|date',
-        'based_on'         => 'nullable|string',
-    ]);
+    $data = $request->validated();
 
     $existingRequest = TransfersAdmission::where('student_id', $data['student_id'])
         ->where('type', 'admission')
@@ -125,17 +108,12 @@ class TransferAdmissionController extends Controller
     ], 201);
 }
 
-    public function update(Request $request, $id)
+    public function update(UpdateTransfersAdmissionRequest $request, $id)
     {
         $transferAdmission = TransfersAdmission::findOrFail($id);
         $this->authorize('update', $transferAdmission);
 
-        $request->validate([
-            'status'        => 'required|in:pending,approved,rejected',
-            'approval_date' => 'required_if:status,approved|date|nullable',
-            'reason'        => 'nullable|string',
-            'based_on'      => 'nullable|string'
-        ]);
+        $request->validated();
 
         DB::transaction(function () use ($transferAdmission, $request) {
             

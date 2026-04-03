@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreSchoolRequest;
+use App\Http\Requests\UpdateSchoolRequest;
 use App\Models\School;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -17,14 +19,10 @@ class SchoolControlle extends Controller
         return response()->json($schools, 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreSchoolRequest $request)
     {
         $this->authorize('create',School::class);
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'school_type' => 'required|string|in:public,private',
-            'address' => 'required|string|max:255'
-        ]);
+        $data = $request->validated();
         $data['created_by'] = Auth::id();
         $school = School::create($data);
         return response()->json([
@@ -33,15 +31,11 @@ class SchoolControlle extends Controller
         ], 201);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateSchoolRequest $request, string $id)
     {
         $school = School::findOrFail($id);
         $this->authorize('update',$school);
-        $data = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'school_type' => 'sometimes|string|in:public,private',
-            'address' => 'sometimes|string|max:255'
-        ]);
+        $data = $request->validated();
         $data['created_by'] = Auth::id();
         $school->update($data);
         return response()->json([

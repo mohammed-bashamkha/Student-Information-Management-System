@@ -17,59 +17,54 @@ class StudentController extends Controller
 {
     use AuthorizesRequests;
     public function index(Request $request)
-{
-    $this->authorize('viewAny', Student::class);
-
-    $query = Student::query();
-
-    if ($request->filled('academic_year_id')) {
-        $query->with(['enrollments' => function ($q) use ($request) {
-            $q->where('academic_year_id', $request->academic_year_id)
-              ->with(['school', 'schoolClass']);
-        }]);
-    } else {
-        $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass']);
-    }
-
-    if ($request->filled('search')) {
-        $searchTerm = $request->search;
-        $query->where(function ($q) use ($searchTerm) {
-            $q->where('full_name', 'LIKE', "%{$searchTerm}%")
-              ->orWhere('school_number', 'LIKE', "%{$searchTerm}%")
-              ->orWhere('seat_number', 'LIKE', "%{$searchTerm}%")
-              ->orWhere('nationality', 'LIKE', "%{$searchTerm}%")
-              ->orWhere('gender', 'LIKE', "%{$searchTerm}%")
-              ->orWhere('date_of_birth', 'LIKE', "%{$searchTerm}%");
-        });
-    }
-
-    if ($request->filled('academic_year_id') || $request->filled('school_id') || $request->filled('class_id')) {
-        
-        $query->whereHas('enrollments', function ($q) use ($request) {
-            
-            if ($request->filled('academic_year_id')) {
-                $q->where('academic_year_id', $request->academic_year_id);
-            }
-
-            if ($request->filled('school_id')) {
-                $q->where('school_id', $request->school_id);
-            }
-
-            if ($request->filled('class_id')) {
-                $q->where('class_id', $request->class_id);
-            }
-            
-        });
-    }
-
-    $students = $query->orderBy('id', 'desc')->paginate(10);
-
-    return response()->json($students, 200);
-}
-
-    public function create()
     {
-        //
+        $this->authorize('viewAny', Student::class);
+
+        $query = Student::query();
+
+        if ($request->filled('academic_year_id')) {
+            $query->with(['enrollments' => function ($q) use ($request) {
+                $q->where('academic_year_id', $request->academic_year_id)
+                ->with(['school', 'schoolClass']);
+            }]);
+        } else {
+            $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass']);
+        }
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('full_name', 'LIKE', "%{$searchTerm}%")
+                ->orWhere('school_number', 'LIKE', "%{$searchTerm}%")
+                ->orWhere('seat_number', 'LIKE', "%{$searchTerm}%")
+                ->orWhere('nationality', 'LIKE', "%{$searchTerm}%")
+                ->orWhere('gender', 'LIKE', "%{$searchTerm}%")
+                ->orWhere('date_of_birth', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        if ($request->filled('academic_year_id') || $request->filled('school_id') || $request->filled('class_id')) {
+            
+            $query->whereHas('enrollments', function ($q) use ($request) {
+                
+                if ($request->filled('academic_year_id')) {
+                    $q->where('academic_year_id', $request->academic_year_id);
+                }
+
+                if ($request->filled('school_id')) {
+                    $q->where('school_id', $request->school_id);
+                }
+
+                if ($request->filled('class_id')) {
+                    $q->where('class_id', $request->class_id);
+                }
+                
+            });
+        }
+
+        $students = $query->orderBy('id', 'desc')->paginate(10);
+
+        return response()->json($students, 200);
     }
 
     public function store(StoreStudentWithEnrollmentRequest $request)
@@ -121,11 +116,6 @@ class StudentController extends Controller
             'message' => 'تم جلب بيانات الطالب بنجاح',
             'data' => $student
         ], 200);
-    }
-
-    public function edit(string $id)
-    {
-        //
     }
 
     public function update(UpdateStudentWithEnrollmentRequest $request, $id)
@@ -192,9 +182,6 @@ class StudentController extends Controller
         ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $student = Student::findOrFail($id);
