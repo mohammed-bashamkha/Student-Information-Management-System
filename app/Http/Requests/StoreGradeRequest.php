@@ -28,7 +28,7 @@ class StoreGradeRequest extends FormRequest
             'academic_year_id' => 'required|exists:academic_years,id',
             'first_semester_total' => 'required|numeric|min:0|max:50',
             'second_semester_total' => 'required|numeric|min:0|max:50',
-            'total' => 'required|numeric|min:0|max:100',
+            // 'total' => 'required|numeric|min:0|max:100',
         ];
     }
 }
