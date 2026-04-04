@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-
+Route::get('/export/student-data', [FinalResultExportController::class, 'exportStudentData'])
+    ->name('student-data.export');
 Route::get('/export/final-result', [FinalResultExportController::class, 'exportFinalResults'])
     ->name('final-result.export');
 
