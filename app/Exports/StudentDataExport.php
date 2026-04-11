@@ -57,7 +57,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
         $drawing->setName('Logo');
         $drawing->setPath(public_path('images/yemen.logo.png'));
         $drawing->setHeight(70);
-        $drawing->setCoordinates('E1');
+        $drawing->setCoordinates('D1');
         $drawing->setOffsetX(20);
         return $drawing;
     }
@@ -72,8 +72,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
         ->with(['enrollments' => function($q) {
             $q->where('school_id', $this->schoolId)
               ->where('class_id', $this->classId)
-              ->where('academic_year_id', $this->academicYearId)
-              ->with(['school']);
+              ->where('academic_year_id', $this->academicYearId);
         }])
         ->get();
 
@@ -82,6 +81,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function headings(): array
     {
+        // تم حذف عمود "المدرسة المسجل بها"
         return [
             'م',
             'الرقم المدرسي',
@@ -91,7 +91,6 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             'الجنس',
             'تاريخ الميلاد',
             'تاريخ التسجيل',
-            'المدرسة المسجل بها',
             'تاريخ الإنشاء',
         ];
     }
@@ -101,7 +100,6 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function map($student): array
     {
         $this->rowNumber++;
-        $currentEnrollment = $student->enrollments->first();
 
         return [
             $this->rowNumber,
@@ -112,7 +110,6 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             $student->gender === 'male' ? 'ذكر' : ($student->gender === 'female' ? 'أنثى' : ''),
             $student->date_of_birth,
             $student->registration_date,
-            $currentEnrollment->school->name ?? 'N/A',
             $student->created_at->format('Y-m-d'),
         ];
     }
@@ -124,7 +121,8 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
                 
-                $highestCol = 'J';
+                // تم تعديل أعلى عمود إلى I بدلاً من J
+                $highestCol = 'I';
                 $highestRow = $sheet->getHighestRow();
                 $count = $this->studentsCollection->count();
                 $firstStudent = $this->studentsCollection->first()->full_name ?? '---';
@@ -144,7 +142,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
 
                 // --- 🌟 بيانات المدرسة ---
                 $sheet->setCellValue('A7', "مديرية : {$this->schoolInfo['directorate']} | مدرسة : {$this->schoolInfo['school']} | الصف : {$this->schoolInfo['class']}");
-                $sheet->mergeCells("A7:G7");
+                $sheet->mergeCells("A7:{$highestCol}7"); // تعديل الدمج ليشمل كل الأعمدة الجديدة
                 $sheet->getStyle('A7')->getFont()->setBold(true);
 
                 // --- 🌟 إحصائيات ---
@@ -164,7 +162,6 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $sheet->getColumnDimension('G')->setWidth(15);
                 $sheet->getColumnDimension('H')->setWidth(15);
                 $sheet->getColumnDimension('I')->setWidth(20);
-                $sheet->getColumnDimension('J')->setWidth(20);
 
                 // --- 🎨 تنسيق رأس الجدول ---
                 $sheet->getStyle("A11:{$highestCol}11")->applyFromArray([

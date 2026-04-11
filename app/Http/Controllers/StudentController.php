@@ -28,7 +28,7 @@ class StudentController extends Controller
               ->with(['school', 'schoolClass']);
         }]);
     } else {
-        $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass']);
+        $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass','currentEnrollment.academicYear']);
     }
 
     if ($request->filled('search')) {
