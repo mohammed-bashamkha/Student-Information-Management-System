@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSubjectRequest;
-use App\Http\Requests\UpdateSubjectRequest;
+use App\Http\Requests\SubjectRequest\StoreSubjectRequest;
+use App\Http\Requests\SubjectRequest\UpdateSubjectRequest;
 use App\Models\Subject;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;

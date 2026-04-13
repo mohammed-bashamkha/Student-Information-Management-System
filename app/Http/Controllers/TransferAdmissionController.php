@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreAdmissionRequest;
-use App\Http\Requests\StoreTransferRequest;
-use App\Http\Requests\UpdateTransfersAdmissionRequest;
+use App\Http\Requests\TransfersAdmissionRequest\StoreAdmissionRequest;
+use App\Http\Requests\TransfersAdmissionRequest\StoreTransferRequest;
+use App\Http\Requests\TransfersAdmissionRequest\UpdateTransfersAdmissionRequest;
 use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
 use Illuminate\Validation\ValidationException;

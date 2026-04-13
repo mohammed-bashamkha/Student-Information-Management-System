@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreGradeRequest;
-use App\Http\Requests\UpdateGradeRequest;
+use App\Http\Requests\GradeRequest\StoreGradeRequest;
+use App\Http\Requests\GradeRequest\UpdateGradeRequest;
 use App\Models\FinalResult;
 use App\Models\Grade;
 use App\Models\Student;

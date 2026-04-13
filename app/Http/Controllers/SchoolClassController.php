@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SchoolClassRequest;
+use App\Http\Requests\SchoolClassRequest\SchoolClassRequest;
 use App\Models\SchoolClass;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;

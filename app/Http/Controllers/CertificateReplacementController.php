@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCertificateReplacementReuest;
-use App\Http\Requests\UpdateCertificateReplacementReuest;
+use App\Http\Requests\CertificateReplacementRequest\StoreCertificateReplacementReuest;
+use App\Http\Requests\CertificateReplacementRequest\UpdateCertificateReplacementReuest;
 use App\Models\CertificateReplacement;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\FinalResultImportRequest;
+use App\Http\Requests\FinalResultRequest\FinalResultImportRequest;
 use App\Imports\FinalResultImport;
 use App\Imports\FinalResultImportImproved;
 use Illuminate\Http\Request;

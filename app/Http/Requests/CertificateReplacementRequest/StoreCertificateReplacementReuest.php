@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\CertificateReplacementRequest;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreAdmissionRequest extends FormRequest
+class StoreCertificateReplacementReuest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,15 +24,12 @@ class StoreAdmissionRequest extends FormRequest
     {
         return [
             'student_id'       => 'required|exists:students,id',
-            'from_school_id'   => 'required|exists:schools,id',
-            'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
+            'school_id'        => 'required|exists:schools,id',
+            'class_id'        => 'required|exists:schools,id',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'class_id'         => 'required|exists:school_classes,id',
-            'request_date'     => 'required|date',
-            'reason'           => 'nullable|string',
-            'start_date'       => 'required|date',
-            'end_date'         => 'required|date',
-            'based_on'         => 'nullable|string',
+            'certificate_type' => 'required|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+            'request_date'     => 'required|string|date',
         ];
     }
 }

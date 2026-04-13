@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\SchoolClassRequest;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateTransfersAdmissionRequest extends FormRequest
+class SchoolClassRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,10 +23,8 @@ class UpdateTransfersAdmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status'        => 'required|in:pending,approved,rejected',
-            'approval_date' => 'required_if:status,approved|date|nullable',
-            'reason'        => 'nullable|string',
-            'based_on'      => 'nullable|string'
+            'name' => 'required|string|max:50',
+            'level_id' => 'required|exists:levels,id',
         ];
     }
 }

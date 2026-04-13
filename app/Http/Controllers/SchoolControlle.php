@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSchoolRequest;
-use App\Http\Requests\UpdateSchoolRequest;
+use App\Http\Requests\SchoolRequest\StoreSchoolRequest;
+use App\Http\Requests\SchoolRequest\UpdateSchoolRequest;
 use App\Models\School;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;

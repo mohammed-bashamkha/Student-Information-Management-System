@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreStudentWithEnrollmentRequest;
-use App\Http\Requests\UpdateStudentWithEnrollmentRequest;
+use App\Http\Requests\StudentRequest\StoreStudentWithEnrollmentRequest;
+use App\Http\Requests\StudentRequest\UpdateStudentWithEnrollmentRequest;
 use App\Models\Error;
 use App\Models\Student;
 use App\Models\StudentEnrollment;

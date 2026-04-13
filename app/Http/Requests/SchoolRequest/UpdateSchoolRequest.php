@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\SchoolRequest;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateSubjectRequest extends FormRequest
+class UpdateSchoolRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,9 +23,9 @@ class UpdateSubjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'level_id' => 'sometimes|integer|exists:levels,id',
-            'school_class_id' => 'sometimes|integer|exists:school_classes,id',
-            'name' => 'sometimes|string|max:50',
+            'name' => 'sometimes|string|max:255',
+            'school_type' => 'sometimes|string|in:public,private',
+            'address' => 'sometimes|string|max:255'
         ];
     }
 }
