@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreStudentWithEnrollmentRequest;
-use App\Http\Requests\UpdateStudentWithEnrollmentRequest;
+use App\Http\Requests\StudentRequest\StoreStudentWithEnrollmentRequest;
+use App\Http\Requests\StudentRequest\UpdateStudentWithEnrollmentRequest;
 use App\Models\Error;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
@@ -123,11 +123,6 @@ class StudentController extends Controller
         ], 200);
     }
 
-    public function edit(string $id)
-    {
-        //
-    }
-
     public function update(UpdateStudentWithEnrollmentRequest $request, $id)
     {
     $student = Student::findOrFail($id);
@@ -192,9 +187,6 @@ class StudentController extends Controller
         ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $student = Student::findOrFail($id);

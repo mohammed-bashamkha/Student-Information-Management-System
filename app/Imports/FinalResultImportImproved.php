@@ -7,6 +7,7 @@ use App\Models\Grade;
 use App\Models\FinalResult;
 use App\Models\SchoolClass;
 use App\Models\StudentEnrollment;
+use App\Services\ResultCalculationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -189,6 +190,10 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             $secondSemesterGrade = $this->parseGrade($row[$firstSemesterIndex + 1] ?? null);
             $totalGrade = $this->parseGrade($row[$firstSemesterIndex + 2] ?? null);
 
+            if ($totalGrade === null && ($firstSemesterGrade !== null || $secondSemesterGrade !== null)) {
+                $totalGrade = ($firstSemesterGrade ?? 0) + ($secondSemesterGrade ?? 0);
+            }
+
             // التحقق من المجموع
             if ($totalGrade !== null && $firstSemesterGrade !== null && $secondSemesterGrade !== null) {
                 $calculatedTotal = $firstSemesterGrade + $secondSemesterGrade;
@@ -204,19 +209,23 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                 }
             }
 
-            Grade::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'subject_id' => $subject->id,
-                    'academic_year_id' => $this->academicYearId
-                ],
-                [
-                    'first_semester_total' => $firstSemesterGrade,
-                    'second_semester_total' => $secondSemesterGrade,
-                    'total' => $totalGrade,
-                    'created_by' => $this->userId
-                ]
-            );
+            if ($firstSemesterGrade !== null || $secondSemesterGrade !== null || $totalGrade !== null)
+            {
+                Grade::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'subject_id' => $subject->id,
+                        'academic_year_id' => $this->academicYearId
+                    ],
+                    [
+                        'first_semester_total' => $firstSemesterGrade,
+                        'second_semester_total' => $secondSemesterGrade,
+                        'total' => $totalGrade,
+                        'created_by' => $this->userId
+                    ]
+                );
+            }
+            
         }
     }
 
@@ -232,19 +241,25 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
         $notes = $this->sanitizeValue($row[$finalResultStartIndex + 3] ?? null);
 
-        FinalResult::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'academic_year_id' => $this->academicYearId
-            ],
-            [
-                'total_student_grades' => $totalStudentGrades,
-                'average_grade' => $gpa,
-                'final_result' => $finalResult,
-                'notes' => $notes,
-                'created_by' => $this->userId
-            ]
-        );
+        if($totalStudentGrades === null || $gpa === null || $finalResult === null)
+        {
+            $calcService = new ResultCalculationService();
+            $calcService->calculateFinalResult($student->id, $this->academicYearId, $this->userId);
+        }else {
+            FinalResult::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'academic_year_id' => $this->academicYearId
+                ],
+                [
+                    'total_student_grades' => $totalStudentGrades,
+                    'average_grade' => $gpa,
+                    'final_result' => $finalResult,
+                    'notes' => $notes,
+                    'created_by' => $this->userId
+                ]
+            );
+        }
     }
 
     /**

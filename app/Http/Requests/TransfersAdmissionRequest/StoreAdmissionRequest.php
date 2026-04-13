@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\TransfersAdmissionRequest;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreTransfersAdmissionRequest extends FormRequest
+class StoreAdmissionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,19 +18,21 @@ class StoreTransfersAdmissionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'type'             => 'required|in:transfer,admission',
             'student_id'       => 'required|exists:students,id',
-            'from_school_id'   => 'required_if:type,transfer|exists:schools,id|nullable',
+            'from_school_id'   => 'required|exists:schools,id',
             'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
-            
             'academic_year_id' => 'required|exists:academic_years,id',
+            'class_id'         => 'required|exists:school_classes,id',
             'request_date'     => 'required|date',
-            'reason'           => 'nullable|string|max:500',
+            'reason'           => 'nullable|string',
+            'start_date'       => 'required|date',
+            'end_date'         => 'required|date',
+            'based_on'         => 'nullable|string',
         ];
     }
 }

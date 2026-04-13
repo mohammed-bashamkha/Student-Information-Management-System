@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FinalResultRequest\FinalResultImportRequest;
 use App\Imports\FinalResultImport;
 use App\Imports\FinalResultImportImproved;
 use Illuminate\Http\Request;
@@ -15,26 +16,8 @@ class FinalResultImportController extends Controller
         return view('import');
     }
 
-    public function importImproved(Request $request)
+    public function importImproved(FinalResultImportRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:xlsx,xls|max:10240',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'class_id' => 'required|exists:school_classes,id',
-            'school_id' => 'required|exists:schools,id',
-        ], [
-            'file.required' => 'يرجى اختيار ملف Excel',
-            'file.mimes' => 'يجب أن يكون الملف بصيغة Excel (xlsx, xls)',
-            'file.max' => 'حجم الملف يجب أن لا يتجاوز 10 ميجابايت',
-            'academic_year_id.required' => 'يرجى اختيار السنة الدراسية',
-            'class_id.required' => 'يرجى اختيار الصف',
-            'school_id.required' => 'يرجى اختيار المدرسة',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
         try {
             $import = new FinalResultImportImproved(
                 $request->academic_year_id,

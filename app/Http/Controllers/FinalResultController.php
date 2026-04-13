@@ -96,7 +96,7 @@ class FinalResultController extends Controller
     public function showImport()
     {
         $academicYears = AcademicYear::orderBy('year', 'desc')->get();
-        $school_classes = SchoolClass::where(['level_id' => 1])->get();
+        $school_classes = SchoolClass::all();
         $schools = School::all();
 
         return view('import', [
