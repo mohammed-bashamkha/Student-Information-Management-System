@@ -114,7 +114,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         $existingStudent = Student::where('school_number', $schoolNumber)->first();
         $isNew = !$existingStudent;
 
-        $student = Student::updateOrCreate(
+        $student = Student::firstOrCreate(
             ['school_number' => $schoolNumber],
             [
                 'full_name'         => $fullName,
@@ -124,15 +124,23 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
                 'date_of_birth'     => $this->transformDate($dob),
                 'registration_date' => $this->transformDate($regDate) ?? now(),
                 'updated_at'        => now(),
+                'created_by'        => $this->userId,
             ]
         );
 
-        // تعيين المنشئ فقط في حالة الطالب الجديد
-        if ($isNew) {
-            $student->update(['created_by' => $this->userId]);
-            $this->stats['students_created']++;
-        } else {
+        if (!$student->wasRecentlyCreated) {
+            $student->update([
+                'full_name'         => $fullName,
+                'seat_number'       => $seatNumber,
+                'nationality'       => $nationality,
+                'gender'            => $gender,
+                'date_of_birth'     => $this->transformDate($dob),
+                'registration_date' => $this->transformDate($regDate) ?? now(),
+            ]);
+        
             $this->stats['students_updated']++;
+        } else {
+            $this->stats['students_created']++;
         }
 
         // 4. ربط الطالب بالسنة والدراسة (Enrollment)

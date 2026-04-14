@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Traits; // يفضل وضعه في مجلد Traits خاص
+namespace App\Traits;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -11,7 +11,7 @@ trait UploadFileTrait
     protected function uploadFile(
         UploadedFile $file,
         string $folder,
-        string $disk = 'public/students-images',
+        string $disk = 'public',
         ?string $oldPath = null
     ): string {
         if ($oldPath) {
@@ -23,7 +23,7 @@ trait UploadFileTrait
         return $file->storeAs($folder, $filename, $disk);
     }
 
-    protected function deleteFile(string $path, string $disk = 'public/students-images'): void
+    protected function deleteFile(string $path, string $disk = 'public'): void
     {
         if (Storage::disk($disk)->exists($path)) {
             Storage::disk($disk)->delete($path);

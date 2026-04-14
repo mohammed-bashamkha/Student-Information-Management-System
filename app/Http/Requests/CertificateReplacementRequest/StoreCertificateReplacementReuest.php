@@ -30,6 +30,7 @@ class StoreCertificateReplacementReuest extends FormRequest
             'certificate_type' => 'required|string|max:100',
             'notes'            => 'nullable|string|max:500',
             'request_date'     => 'required|string|date',
+            'student_image'    => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
         ];
     }
 }

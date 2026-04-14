@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('certificate_replacements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('created_by')->constrained('users');
+            $table->string('student_image')->nullable();
             $table->foreignId('student_id')->constrained('students');
             $table->foreignId('school_id')->constrained('schools');
             $table->foreignId('class_id')->constrained('school_classes');

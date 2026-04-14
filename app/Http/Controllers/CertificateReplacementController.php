@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CertificateReplacementRequest\StoreCertificateReplacementReuest;
 use App\Http\Requests\CertificateReplacementRequest\UpdateCertificateReplacementReuest;
 use App\Models\CertificateReplacement;
+use App\Traits\UploadFileTrait;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class CertificateReplacementController extends Controller
 {
     use AuthorizesRequests;
+    use UploadFileTrait;
     public function index(Request $request)
     {
         $this->authorize('viewAny', CertificateReplacement::class);
@@ -56,6 +58,10 @@ class CertificateReplacementController extends Controller
 
         $data['created_by'] = Auth::id();
 
+        if ($request->hasFile('student_image')) {
+            $data['student_image'] = $this->uploadFile($request->file('student_image'), 'certificate_replacements/students-images');
+        }
+
         $certificate = CertificateReplacement::create($data);
 
         return response()->json([
@@ -78,6 +84,11 @@ class CertificateReplacementController extends Controller
         $this->authorize('update', $certificate);
 
         $data = $request->validated();
+
+        if ($request->hasFile('student_image')) {
+            $data['student_image'] = $this->uploadFile($request->file('student_image'), 
+            'certificate_replacements/students-images','public', $certificate->student_image);
+        }
 
         $certificate->update($data);
 

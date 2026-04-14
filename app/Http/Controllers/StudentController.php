@@ -77,8 +77,9 @@ class StudentController extends Controller
         $this->authorize('create',Student::class);
 
         $data = $request->validated();
+        $user_id = Auth::id();
 
-         $result = DB::transaction(function () use ($data, $request) {
+         $result = DB::transaction(function () use ($data, $request, $user_id) {
             $student = Student::create([
                 'school_number' => $data['school_number'],
                 'seat_number' => $data['seat_number'],
@@ -87,14 +88,14 @@ class StudentController extends Controller
                 'gender' => $data['gender'],
                 'date_of_birth' => $data['date_of_birth'] ?? null,
                 'registration_date' => $data['registration_date'] ?? null,
-                'created_by' => Auth::id()
+                'created_by' => $user_id
             ]);
             $enrollment = StudentEnrollment::create([
                 'student_id' => $student->id,
                 'school_id' => $request->school_id,
                 'class_id' => $request->class_id,
                 'academic_year_id' => $request->academic_year_id,
-                'created_by' => Auth::id()
+                'created_by' => $user_id
             ]);
 
             $enrollment->load(['school', 'schoolClass']);
