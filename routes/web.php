@@ -3,6 +3,7 @@
 use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\FinalResultExportController;
 use App\Http\Controllers\FinalResultImportController;
+use App\Http\Controllers\PdfExportController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentsDataImportController;
 use App\Models\SchoolClass;
@@ -32,3 +33,11 @@ Route::get('/students/import', [StudentsDataImportController::class, 'importForm
 Route::post('/students/import', [StudentsDataImportController::class, 'import'])->name('students.import.submit');
 
 Route::get('/students-index', [StudentsDataImportController::class, 'index'])->name('students.students-index');
+
+// ===== PDF Export Routes =====
+    Route::prefix('pdf')->group(function () {
+        Route::get('/certificate-replacement/{id}', [PdfExportController::class, 'certificateReplacement'])->name('pdf.certificate');
+        Route::get('/transfer/{id}',                [PdfExportController::class, 'transfer'])->name('pdf.transfer');
+        Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
+        Route::get('/final-result/{id}',            [PdfExportController::class, 'finalResult'])->name('pdf.finalResult');
+    });

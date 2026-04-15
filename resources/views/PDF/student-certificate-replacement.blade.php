@@ -341,11 +341,11 @@
           <div>محافظة حضرموت الساحل</div>
         </div>
         <div class="header-center">
-          <img src="images/yemen.logo.png" alt="شعار الجمهورية اليمنية">
+          <img src="{{ asset('images/yemen.logo.png') }}" alt="شعار الجمهورية اليمنية">
         </div>
         <div class="header-left">
-          <div>رقم النموذج: <span>................</span></div>
-          <div>التاريخ: <span>......./......./........</span></div>
+          <div>رقم النموذج: <span>{{ $certificate->id }}</span></div>
+          <div>التاريخ: <span>{{ $printDate }}</span></div>
         </div>
       </div>
 
@@ -360,53 +360,57 @@
             <div class="form-row">
               <div class="form-field full">
                 <label>أسم الطالب الرباعي:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $student->full_name ?? '' }}</div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-field">
                 <label>محل الميلاد:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $student->birth_place ?? '' }}</div>
               </div>
               <div class="form-field">
                 <label>تاريخ الميلاد:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $student->birth_date ?? '' }}</div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-field">
                 <label>المدرسة:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $school->name ?? '' }}</div>
               </div>
               <div class="form-field">
                 <label>المديرية:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $school->district ?? '' }}</div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-field">
                 <label>نوع الشهادة:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $certificate->certificate_type ?? '' }}</div>
               </div>
               <div class="form-field">
                 <label>العام الدراسي:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $academicYear->year ?? '' }}</div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-field">
                 <label>القسم:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $schoolClass->name ?? '' }}</div>
               </div>
               <div class="form-field">
                 <label>رقم الجلوس:</label>
-                <div class="dots"></div>
+                <div class="dots">{{ $student->seat_number ?? '' }}</div>
               </div>
             </div>
           </div>
-          <!-- Student Photo (replaces QR/verification) -->
+          <!-- Student Photo -->
           <div class="photo-area">
-            <div class="photo-placeholder">صورة<br />الطالب</div>
+            @if($certificate->student_image)
+              <img src="{{ asset('storage/' . $certificate->student_image) }}" style="width:120px;height:150px;object-fit:cover;" alt="صورة الطالب">
+            @else
+              <div class="photo-placeholder">صورة<br />الطالب</div>
+            @endif
             <div class="photo-label">صورة الطالب</div>
           </div>
         </div>
@@ -421,7 +425,7 @@
       <div class="signature-row">
         <div class="signature-field">
           <label>أسم المتقدم:</label>
-          <div class="dots"></div>
+          <div class="dots">{{ $student->full_name ?? '' }}</div>
         </div>
         <div class="signature-field">
           <label>توقيعة:</label>
@@ -429,7 +433,7 @@
         </div>
         <div class="signature-field">
           <label>تاريخ الطلب:</label>
-          <div class="dots"></div>
+          <div class="dots">{{ $printDate }}</div>
         </div>
       </div>
 
@@ -440,45 +444,45 @@
           <div class="form-row">
             <div class="form-field full">
               <label>أسم الطالب الرباعي:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $student->full_name ?? '' }}</div>
             </div>
           </div>
           <div class="form-row">
             <div class="form-field">
               <label>محل الميلاد:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $student->birth_place ?? '' }}</div>
             </div>
             <div class="form-field">
               <label>تاريخ الميلاد:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $student->birth_date ?? '' }}</div>
             </div>
             <div class="form-field">
               <label>المدرسة:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $school->name ?? '' }}</div>
             </div>
           </div>
           <div class="form-row">
             <div class="form-field">
               <label>المديرية:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $school->district ?? '' }}</div>
             </div>
             <div class="form-field">
               <label>نوع الشهادة:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $certificate->certificate_type ?? '' }}</div>
             </div>
             <div class="form-field">
               <label>العام الدراسي:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $academicYear->year ?? '' }}</div>
             </div>
           </div>
           <div class="form-row">
             <div class="form-field">
               <label>القسم:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $schoolClass->name ?? '' }}</div>
             </div>
             <div class="form-field">
               <label>رقم الجلوس:</label>
-              <div class="dots"></div>
+              <div class="dots">{{ $student->seat_number ?? '' }}</div>
             </div>
           </div>
           <div class="checkbox-row">
@@ -568,15 +572,15 @@
       <!-- Footer Signatures -->
       <div class="footer-signatures">
         <div class="footer-sig">
-          <div class="name">محمد سرور باعطية</div>
-          <div class="title">رئيس قسم البيانات</div>
+          <div class="name">{{ $createdBy->name ?? '' }}</div>
+          <div class="title">المختص</div>
         </div>
         <div class="footer-sig">
-          <div class="name">حسين عوض الحداد</div>
-          <div class="title">مدير دائرة الاختبارات</div>
+          <div class="name"></div>
+          <div class="title">رئيس قسم الاختبارات</div>
         </div>
         <div class="footer-sig">
-          <div class="name">أ/ أمين عبدالله باعباد</div>
+          <div class="name"></div>
           <div class="title">
             مدير عام مكتب وزارة التربية و التعليم م / حضرموت
           </div>

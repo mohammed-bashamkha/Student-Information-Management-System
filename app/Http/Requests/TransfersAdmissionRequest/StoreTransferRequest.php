@@ -24,13 +24,11 @@ class StoreTransferRequest extends FormRequest
     {
         return [
             'student_id'       => 'required|exists:students,id',
-            'from_school_id'   => 'required|exists:schools,id',
-            'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
-            'class_id'         => 'required|exists:school_classes,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'request_date'     => 'required|date',
+            'to_school_id'     => 'required|exists:schools,id',
+            'request_date'     => 'nullable|date',
             'reason'           => 'nullable|string',
             'based_on'         => 'nullable|string',
+            'status'           => 'nullable|in:pending,approved',
         ];
     }
 }

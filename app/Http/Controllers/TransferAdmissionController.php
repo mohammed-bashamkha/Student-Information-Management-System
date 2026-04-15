@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TransfersAdmissionRequest\StoreAdmissionRequest;
 use App\Http\Requests\TransfersAdmissionRequest\StoreTransferRequest;
 use App\Http\Requests\TransfersAdmissionRequest\UpdateTransfersAdmissionRequest;
+use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
 use Illuminate\Validation\ValidationException;
@@ -25,14 +26,22 @@ class TransferAdmissionController extends Controller
             $searchTerm = $request->search;
             $query->whereHas('student', function ($q) use ($searchTerm) {
                 $q->where('full_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('school_number', 'LIKE', "%{$searchTerm}%");
+                    ->orWhere('school_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        if ($request->filled('status')) { $query->where('status', $request->status); }
-        if ($request->filled('type')) { $query->where('type', $request->type); }
-        if ($request->filled('to_school_id')) { $query->where('to_school_id', $request->to_school_id); }
-        if ($request->filled('academic_year_id')) { $query->where('academic_year_id', $request->academic_year_id); }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('to_school_id')) {
+            $query->where('to_school_id', $request->to_school_id);
+        }
+        if ($request->filled('academic_year_id')) {
+            $query->where('academic_year_id', $request->academic_year_id);
+        }
 
         $transfers = $query->latest()->paginate(15);
 
@@ -45,12 +54,14 @@ class TransferAdmissionController extends Controller
 
         $data = $request->validated();
 
-        $existingRequest = TransfersAdmission::where('student_id', $data['student_id'])
+        $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
+
+        $existingRequest = TransfersAdmission::where('student_id', $student->id)
             ->where('type', 'transfer')
-            ->where('academic_year_id', $data['academic_year_id'])
-            ->where('from_school_id', $data['from_school_id'])
+            ->where('academic_year_id', $student->currentEnrollment->academic_year_id)
+            ->where('from_school_id', $student->currentEnrollment->school_id)
             ->where('to_school_id', $data['to_school_id'])
-            ->where('class_id', $data['class_id'])
+            ->where('class_id', $student->currentEnrollment->class_id)
             ->whereIn('status', ['pending', 'approved'])
             ->first();
 
@@ -63,91 +74,150 @@ class TransferAdmissionController extends Controller
             ]);
         }
 
-        $data['type'] = 'transfer';
-        $data['created_by'] = Auth::id();
+        $status = $data['status'] ?? 'pending';
 
-        $transfer = TransfersAdmission::create($data);
+        $transfer = DB::transaction(function () use ($data, $student, $status) {
+            $transfer = TransfersAdmission::create([
+                'student_id'       => $student->id,
+                'academic_year_id' => $student->currentEnrollment->academic_year_id,
+                'from_school_id'   => $student->currentEnrollment->school_id,
+                'to_school_id'     => $data['to_school_id'],
+                'request_date'     => $data['request_date'] ?? now(),
+                'class_id'         => $student->currentEnrollment->class_id,
+                'type'             => 'transfer',
+                'status'           => $status,
+                'approval_date'    => $status === 'approved' ? now() : null,
+                'reason'           => $data['reason'] ?? null,
+                'based_on'         => $data['based_on'] ?? null,
+                'created_by'       => Auth::id(),
+            ]);
+
+            // إذا تمت الموافقة مباشرةً عند الإنشاء
+            if ($status === 'approved') {
+                $this->applyEnrollment($transfer);
+            }
+
+            return $transfer;
+        });
+
+        $message = $status === 'approved'
+            ? 'تم تسجيل طلب النقل وتمت الموافقة عليه مباشرةً'
+            : 'تم تسجيل طلب النقل بنجاح وهو الآن قيد الانتظار';
 
         return response()->json([
-            'message' => 'تم تسجيل طلب النقل بنجاح وهو الآن قيد الانتظار',
-            'data'    => $transfer
+            'message' => $message,
+            'data'    => $transfer->load(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
         ], 201);
     }
 
     public function storeAdmission(StoreAdmissionRequest $request)
-{
-    $this->authorize('create', TransfersAdmission::class);
+    {
+        $this->authorize('create', TransfersAdmission::class);
 
-    $data = $request->validated();
+        $data = $request->validated();
 
-    $existingRequest = TransfersAdmission::where('student_id', $data['student_id'])
-        ->where('type', 'admission')
-        ->where('academic_year_id', $data['academic_year_id'])
-        ->where('from_school_id', $data['from_school_id'])
-        ->where('to_school_id', $data['to_school_id'])
-        ->where('class_id', $data['class_id'])
-        ->whereIn('status', ['pending', 'approved'])
-        ->first();
+        $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
 
-    if ($existingRequest) {
-        $statusAr = $existingRequest->status === 'pending' ? 'قيد الانتظار' : 'مقبول مسبقاً';
-        throw ValidationException::withMessages([
-            'message' => "عفواً، لا يمكن إرسال طلب قبول مؤقت. يوجد طلب قبول مؤقت لهذا الطالب مسبقاً",
-            'status'  => $statusAr
-        ]);
+        // التأكد من عدم وجود طلب قبول مؤقت مكرر
+        $existingRequest = TransfersAdmission::where('student_id', $student->id)
+            ->where('type', 'admission')
+            ->where('academic_year_id', $student->currentEnrollment->academic_year_id)
+            ->where('to_school_id', $data['to_school_id'])
+            ->whereIn('status', ['pending', 'approved'])
+            ->first();
+
+        if ($existingRequest) {
+            $statusAr = $existingRequest->status === 'pending' ? 'قيد الانتظار' : 'مقبول مسبقاً';
+            throw ValidationException::withMessages([
+                'message' => "عفواً، لا يمكن إرسال طلب قبول مؤقت. يوجد طلب قبول مؤقت لهذا الطالب مسبقاً",
+                'status'  => $statusAr
+            ]);
+        }
+
+        $status = $data['status'] ?? 'pending';
+
+        $admission = DB::transaction(function () use ($data, $student, $status) {
+            $admission = TransfersAdmission::create([
+                'student_id'       => $student->id,
+                'academic_year_id' => $student->currentEnrollment->academic_year_id,
+                'from_school_id'   => $student->currentEnrollment->school_id,
+                'to_school_id'     => $data['to_school_id'],
+                'class_id'         => $student->currentEnrollment->class_id,
+                'type'             => 'admission',
+                'status'           => $status,
+                'approval_date'    => $status === 'approved' ? now() : null,
+                'request_date'     => $data['request_date'] ?? now(),
+                'start_date'       => $data['start_date'] ?? null,
+                'end_date'         => $data['end_date'] ?? null,
+                'reason'           => $data['reason'] ?? null,
+                'based_on'         => $data['based_on'] ?? null,
+                'created_by'       => Auth::id(),
+            ]);
+
+            // إذا تمت الموافقة مباشرةً عند الإنشاء
+            if ($status === 'approved') {
+                $this->applyEnrollment($admission);
+            }
+
+            return $admission;
+        });
+
+        $message = $status === 'approved'
+            ? 'تم تسجيل طلب القبول المؤقت وتمت الموافقة عليه مباشرةً'
+            : 'تم تسجيل طلب القبول المؤقت بنجاح وهو الآن قيد الانتظار';
+
+        return response()->json([
+            'message' => $message,
+            'data'    => $admission->load(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
+        ], 201);
     }
-
-    $data['type'] = 'admission';
-    $data['created_by'] = Auth::id();
-
-    $admission = TransfersAdmission::create($data);
-
-    return response()->json([
-        'message' => 'تم تسجيل طلب القبول بنجاح وهو الآن قيد الانتظار',
-        'data'    => $admission
-    ], 201);
-}
 
     public function update(UpdateTransfersAdmissionRequest $request, $id)
     {
         $transferAdmission = TransfersAdmission::findOrFail($id);
         $this->authorize('update', $transferAdmission);
 
-        $request->validated();
+        $data = $request->validated();
+        $newStatus = $data['status'];
+        $currentStatus = $transferAdmission->status;
 
-        DB::transaction(function () use ($transferAdmission, $request) {
-            
+        // ===== حماية انتقال الحالة =====
+        $allowedTransitions = [
+            'pending'  => ['approved', 'rejected'],
+            'rejected' => ['pending', 'approved'],
+            'approved' => ['rejected'],
+        ];
+
+        if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
+            return response()->json([
+                'message' => "لا يمكن تغيير الحالة من \"{$currentStatus}\" إلى \"{$newStatus}\""
+            ], 422);
+        }
+
+        // ===== تنفيذ التحديث داخل Transaction =====
+        DB::transaction(function () use ($transferAdmission, $data, $newStatus) {
+
             $transferAdmission->update([
-                'status'        => $request->status,
-                'approval_date' => $request->status === 'approved' ? ($request->approval_date ?? now()) : null,
-                'reason'        => $request->reason ?? $transferAdmission->reason,
+                'status'        => $newStatus,
+                'approval_date' => $newStatus === 'approved' ? ($data['approval_date'] ?? now()) : null,
+                'reason'        => $data['reason'] ?? $transferAdmission->reason,
             ]);
 
-            if ($request->status === 'approved') {
-                $enrollment = StudentEnrollment::where('student_id', $transferAdmission->student_id)
-                    ->where('academic_year_id', $transferAdmission->academic_year_id)
-                    ->first();
-
-                if ($enrollment) {
-                    $enrollment->update([
-                        'school_id' => $transferAdmission->to_school_id,
-                        'class_id'  => $transferAdmission->class_id,
-                    ]);
-                } else {
-                    StudentEnrollment::create([
-                        'student_id'       => $transferAdmission->student_id,
-                        'academic_year_id' => $transferAdmission->academic_year_id,
-                        'school_id'        => $transferAdmission->to_school_id,
-                        'class_id'         => $transferAdmission->class_id,
-                        'created_by'       => Auth::id()
-                    ]);
-                }
+            // عند القبول: تحديث أو إنشاء تسجيل الطالب في المدرسة الجديدة
+            if ($newStatus === 'approved') {
+                $this->applyEnrollment($transferAdmission);
             }
         });
 
+        $statusMessages = [
+            'approved' => 'تم قبول الطلب بنجاح وتم تحديث بيانات الطالب',
+            'rejected' => 'تم رفض الطلب',
+            'pending'  => 'تم إعادة فتح الطلب وهو الآن قيد الانتظار',
+        ];
+
         return response()->json([
-            'message' => 'تم تحديث حالة الطلب بنجاح',
-            'data'    => $transferAdmission->fresh(['student', 'fromSchool', 'toSchool', 'schoolClass'])
+            'message' => $statusMessages[$newStatus],
+            'data'    => $transferAdmission->fresh(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
         ], 200);
     }
 
@@ -168,5 +238,32 @@ class TransferAdmissionController extends Controller
 
         $transfer->delete();
         return response()->json(['message' => 'تم حذف الطلب بنجاح'], 200);
+    }
+
+    // ========== Private Helpers ==========
+
+    /**
+     * تحديث أو إنشاء تسجيل الطالب عند موافقة طلب تحويل أو قبول مؤقت
+     */
+    private function applyEnrollment(TransfersAdmission $record): void
+    {
+        $enrollment = StudentEnrollment::where('student_id', $record->student_id)
+            ->where('academic_year_id', $record->academic_year_id)
+            ->first();
+
+        if ($enrollment) {
+            $enrollment->update([
+                'school_id' => $record->to_school_id,
+                'class_id'  => $record->class_id,
+            ]);
+        } else {
+            StudentEnrollment::create([
+                'student_id'       => $record->student_id,
+                'academic_year_id' => $record->academic_year_id,
+                'school_id'        => $record->to_school_id,
+                'class_id'         => $record->class_id,
+                'created_by'       => Auth::id(),
+            ]);
+        }
     }
 }

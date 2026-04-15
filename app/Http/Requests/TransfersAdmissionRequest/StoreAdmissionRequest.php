@@ -24,14 +24,11 @@ class StoreAdmissionRequest extends FormRequest
     {
         return [
             'student_id'       => 'required|exists:students,id',
-            'from_school_id'   => 'required|exists:schools,id',
-            'to_school_id'     => 'required|exists:schools,id|different:from_school_id',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'class_id'         => 'required|exists:school_classes,id',
-            'request_date'     => 'required|date',
+            'to_school_id'     => 'required|exists:schools,id',
+            'request_date'     => 'nullable|date',
             'reason'           => 'nullable|string',
-            'start_date'       => 'required|date',
-            'end_date'         => 'required|date',
+            'start_date'       => 'nullable|date',
+            'end_date'         => 'nullable|date|after_or_equal:start_date',
             'based_on'         => 'nullable|string',
         ];
     }
