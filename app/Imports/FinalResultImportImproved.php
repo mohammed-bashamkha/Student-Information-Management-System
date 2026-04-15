@@ -215,7 +215,9 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                     [
                         'student_id' => $student->id,
                         'subject_id' => $subject->id,
-                        'academic_year_id' => $this->academicYearId
+                        'academic_year_id' => $this->academicYearId,
+                        'school_id' => $this->schoolId,
+                        'class_id' => $this->classId,
                     ],
                     [
                         'first_semester_total' => $firstSemesterGrade,
