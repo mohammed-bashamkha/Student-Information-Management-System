@@ -35,10 +35,16 @@ class GradeController extends Controller
         $this->authorize('create', Grade::class);
         $data = $request->validated();
         $subject = Subject::find($request->subject_id);
+
+        if (!$subject) {
+            return response()->json(['message' => 'المقرر الدراسي غير موجود'], 422);
+        }
+
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
             ->where('academic_year_id', $request->academic_year_id)
-            ->with('schoolClass')
+            ->with('schoolClass.subjects')
             ->first();
+
         if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
             return response()->json([
                 'message' => 'الطالب غير مسجل في هذا المقرر لهذا العام الدراسي'
@@ -47,9 +53,9 @@ class GradeController extends Controller
         $totalSemesteres = $request->first_semester_total + $request->second_semester_total;
         $data['total']      = $totalSemesteres;
         $data['created_by'] = Auth::id();
-        // تعبئة school_id و class_id تلقائياً من تسجيل الطالب
         $data['school_id']  = $enrollment->school_id;
         $data['class_id']   = $enrollment->class_id;
+        $data['academic_year_id'] = $enrollment->academic_year_id;
 
         $grade = DB::transaction(function () use ($data) {
             $grade = Grade::create($data);
@@ -82,14 +88,19 @@ class GradeController extends Controller
 
         $data = $request->validated();
         $subject = Subject::find($request->subject_id);
+
+        if (!$subject) {
+            return response()->json(['message' => 'المقرر الدراسي غير موجود'], 422);
+        }
+
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
             ->where('academic_year_id', $request->academic_year_id)
-            ->with('schoolClass')
+            ->with('schoolClass.subjects')  // تحميل subjects داخل schoolClass
             ->first();
 
         if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
             return response()->json([
-                'message' => "الطالب غير مسجل في مقرر ($subject->name) لهذا العام الدراسي"
+                'message' => "الطالب غير مسجل في مقرر ({$subject->name}) لهذا العام الدراسي"
             ], 422);
         }
 
@@ -125,16 +136,17 @@ class GradeController extends Controller
         $grade = Grade::findOrFail($id);
         $this->authorize('delete', $grade);
 
-        $studentId = $grade->student_id;
+        $studentId      = $grade->student_id;
         $academicYearId = $grade->academic_year_id;
 
-        $grade->delete();
-
-        $this->resultCalculationService->calculateFinalResult($studentId, $academicYearId);
+        DB::transaction(function () use ($grade, $studentId, $academicYearId) {
+            $grade->delete();
+            $this->resultCalculationService->calculateFinalResult($studentId, $academicYearId);
+        });
 
         return response()->json([
             'message' => 'تم حذف الدرجة بنجاح',
-            'ID' => $grade->id
+            'ID'      => $grade->id
         ]);
     }
 }
