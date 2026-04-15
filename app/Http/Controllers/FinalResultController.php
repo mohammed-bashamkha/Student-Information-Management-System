@@ -20,11 +20,12 @@ class FinalResultController extends Controller
     public function index(Request $request)
     {
         $query = FinalResult::with([
-            'student.school',
-            'student.schoolClass',
             'student.grades.subject',
             'student.currentEnrollment.schoolClass',
             'student.currentEnrollment.school',
+            'school',
+            'schoolClass',
+            'academicYear',
         ]);
 
         if ($request->filled('academic_year_id')) {
@@ -61,9 +62,9 @@ class FinalResultController extends Controller
                 $subjectsForHeader = $classForHeader->subjects()->orderBy('id')->get();
             }
         } elseif ($finalResults->isNotEmpty()) {
-            $firstStudent = $finalResults->first()->student;
-            $enrollment   = $firstStudent->currentEnrollment ?? $firstStudent->enrollments()->latest()->first();
-            $classId      = $enrollment?->class_id ?? $firstStudent->class_id;
+            $firstResult = $finalResults->first();
+            // استخدم class_id مباشرةً من final_results
+            $classId = $firstResult->class_id;
             if ($classId) {
                 $classForHeader = SchoolClass::find($classId);
                 if ($classForHeader) {
@@ -149,13 +150,13 @@ class FinalResultController extends Controller
     public function show($id)
     {
         $finalResult = FinalResult::with([
-            'student.school',
-            'student.schoolClass',
             'student.grades.subject',
+            'school',
+            'schoolClass.subjects',
             'academicYear'
         ])->findOrFail($id);
 
-        $subjects = $finalResult->student->schoolClass->subjects()->orderBy('id')->get();
+        $subjects = $finalResult->schoolClass?->subjects()->orderBy('id')->get() ?? collect();
 
         return view('final-result-show', [
             'finalResult' => $finalResult,

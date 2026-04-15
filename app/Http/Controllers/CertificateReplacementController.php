@@ -24,8 +24,8 @@ class CertificateReplacementController extends Controller
             $searchTerm = $request->search;
             $query->whereHas('student', function ($q) use ($searchTerm) {
                 $q->where('full_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('school_number', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('seat_number', 'LIKE', "%{$searchTerm}%");
+                    ->orWhere('school_number', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('seat_number', 'LIKE', "%{$searchTerm}%");
             });
         }
 
@@ -34,7 +34,7 @@ class CertificateReplacementController extends Controller
         }
 
         if ($request->filled('class_id')) {
-            $query->where('school_id', $request->class_id);
+            $query->where('class_id', $request->class_id);
         }
 
         if ($request->filled('academic_year_id')) {
@@ -86,8 +86,12 @@ class CertificateReplacementController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('student_image')) {
-            $data['student_image'] = $this->uploadFile($request->file('student_image'), 
-            'certificate_replacements/students-images','public', $certificate->student_image);
+            $data['student_image'] = $this->uploadFile(
+                $request->file('student_image'),
+                'certificate_replacements/students-images',
+                'public',
+                $certificate->student_image
+            );
         }
 
         $certificate->update($data);

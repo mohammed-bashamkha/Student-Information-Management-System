@@ -56,10 +56,12 @@ class ResultCalculationService
             ['student_id' => $studentId, 'academic_year_id' => $academicYearId],
             [
                 'total_student_grades' => $totalSum,
-                'average_grade' => $average,
-                'final_result' => $finalStatus,
-                'created_by' => $userId,
-                'notes' => $notes
+                'average_grade'        => $average,
+                'final_result'         => $finalStatus,
+                'school_id'            => $enrollment->school_id,
+                'class_id'             => $enrollment->class_id,
+                'created_by'           => $userId,
+                'notes'                => $notes
             ]
         );
     }

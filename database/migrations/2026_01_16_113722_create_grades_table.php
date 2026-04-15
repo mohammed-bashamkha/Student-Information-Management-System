@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained('students');
             $table->foreignId('subject_id')->constrained('subjects');
             $table->foreignId('academic_year_id')->constrained('academic_years');
+            $table->foreignId('school_id')->nullable()->constrained('schools')->nullOnDelete();
+            $table->foreignId('class_id')->nullable()->constrained('school_classes')->nullOnDelete();
             $table->decimal('first_semester_total', 5, 2)->nullable();
             $table->decimal('second_semester_total', 5, 2)->nullable();
             $table->decimal('total', 5, 2)->nullable();

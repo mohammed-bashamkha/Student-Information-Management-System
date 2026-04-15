@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('year')->unique();
             $table->date('start_date');
             $table->date('end_date');
-            $table->boolean('status')->default(true);
+            $table->enum('status', ['active', 'closed', 'upcoming'])->default('active');
             $table->timestamps();
         });
     }

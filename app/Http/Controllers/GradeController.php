@@ -32,26 +32,30 @@ class GradeController extends Controller
 
     public function store(StoreGradeRequest $request)
     {
-        $this->authorize('create',Grade::class);
+        $this->authorize('create', Grade::class);
         $data = $request->validated();
         $subject = Subject::find($request->subject_id);
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
-        ->where('academic_year_id', $request->academic_year_id)
-        ->with('schoolClass')
-        ->first();
+            ->where('academic_year_id', $request->academic_year_id)
+            ->with('schoolClass')
+            ->first();
         if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
             return response()->json([
                 'message' => 'الطالب غير مسجل في هذا المقرر لهذا العام الدراسي'
             ], 422);
         }
         $totalSemesteres = $request->first_semester_total + $request->second_semester_total;
-        $data['total'] = $totalSemesteres;
+        $data['total']      = $totalSemesteres;
         $data['created_by'] = Auth::id();
-            $grade = DB::transaction(function () use ($data) {
+        // تعبئة school_id و class_id تلقائياً من تسجيل الطالب
+        $data['school_id']  = $enrollment->school_id;
+        $data['class_id']   = $enrollment->class_id;
+
+        $grade = DB::transaction(function () use ($data) {
             $grade = Grade::create($data);
 
             $this->resultCalculationService->calculateFinalResult(
-                $data['student_id'], 
+                $data['student_id'],
                 $data['academic_year_id']
             );
 
@@ -79,9 +83,9 @@ class GradeController extends Controller
         $data = $request->validated();
         $subject = Subject::find($request->subject_id);
         $enrollment = StudentEnrollment::where('student_id', $request->student_id)
-        ->where('academic_year_id', $request->academic_year_id)
-        ->with('schoolClass')
-        ->first();
+            ->where('academic_year_id', $request->academic_year_id)
+            ->with('schoolClass')
+            ->first();
 
         if (!$enrollment || !$enrollment->schoolClass->subjects->contains($subject)) {
             return response()->json([
@@ -89,9 +93,11 @@ class GradeController extends Controller
             ], 422);
         }
 
-        if ($grade->student_id != $request->student_id || 
-            $grade->subject_id != $request->subject_id || 
-            $grade->academic_year_id != $request->academic_year_id) {
+        if (
+            $grade->student_id != $request->student_id ||
+            $grade->subject_id != $request->subject_id ||
+            $grade->academic_year_id != $request->academic_year_id
+        ) {
             return response()->json([
                 'message' => 'لا يمكن تغيير الطالب أو المقرر أو العام الدراسي لهذه الدرجة'
             ], 422);
@@ -99,11 +105,11 @@ class GradeController extends Controller
 
         $totalSemesteres = $request->first_semester_total + $request->second_semester_total;
         $data['total'] = $totalSemesteres;
-        
+
         DB::transaction(function () use ($grade, $data) {
             $grade->update($data);
             $this->resultCalculationService->calculateFinalResult(
-                $grade->student_id, 
+                $grade->student_id,
                 $grade->academic_year_id
             );
         });

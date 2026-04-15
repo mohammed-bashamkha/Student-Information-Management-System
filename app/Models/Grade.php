@@ -8,16 +8,29 @@ class Grade extends Model
 {
     protected $guarded = [];
 
-    public function student() {
+    public function student()
+    {
         return $this->belongsTo(Student::class);
     }
 
-    public function subject() {
+    public function subject()
+    {
         return $this->belongsTo(Subject::class);
     }
 
-    public function academicYear() {
+    public function academicYear()
+    {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
     public function createdBy()
