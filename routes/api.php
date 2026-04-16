@@ -11,6 +11,7 @@ use App\Http\Controllers\SchoolControlle;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\PdfExportController;
+use App\Http\Controllers\SuspendedStudentController;
 use App\Http\Controllers\TransferAdmissionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -41,16 +42,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/subjects', SubjectController::class);
     // school classes routes
     Route::apiResource('/school-classes', SchoolClassController::class);
-    // grades routes
-    Route::apiResource('/grades', GradeController::class);
+    // grades routes — محمية: لا يمكن إضافة/تعديل درجة لطالب موقوف
+    Route::apiResource('/grades', GradeController::class)
+        ->middleware(['student.not_suspended']);
+
     // students route
     Route::apiResource('/students', StudentController::class);
-    // certificate replacements routes
-    Route::apiResource('/certificate-replacements', CertificateReplacementController::class);
-    // transfers admissions routes
+
+    // certificate replacements — محمية
+    Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
+        ->only(['store', 'update'])
+        ->middleware(['student.not_suspended']);
+    Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
+        ->except(['store', 'update']);
+
+    // transfers admissions — محمية: store و update
     Route::apiResource('/transfers-admissions', TransferAdmissionController::class)->except('store');
-    Route::post('/transfers', [TransferAdmissionController::class, 'storeTransfer']);
-    Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission']);
+    Route::post('/transfers', [TransferAdmissionController::class, 'storeTransfer'])
+        ->middleware(['student.not_suspended']);
+    Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission'])
+        ->middleware(['student.not_suspended']);
 
     // ===== PDF Export Routes =====
     Route::prefix('pdf')->group(function () {
@@ -59,6 +70,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
         Route::get('/final-result/{id}',            [PdfExportController::class, 'finalResult'])->name('pdf.finalResult');
     });
+    // ===== Suspended Students (انتهاء القبول المؤقت) =====
+    Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
+    Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
