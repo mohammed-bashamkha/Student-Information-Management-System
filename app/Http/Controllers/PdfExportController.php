@@ -25,6 +25,11 @@ class PdfExportController extends Controller
 
         $this->authorize('view', $certificate);
 
+        // منع تصدير PDF للطالب الموقوف
+        if ($certificate->student?->isSuspended()) {
+            return response()->json(['message' => 'لا يمكن تصدير بيانات طالب موقوف'], 403);
+        }
+
         $type = $request->query('type', 'student'); // student | office
 
         if ($type === 'office') {
@@ -61,7 +66,12 @@ class PdfExportController extends Controller
 
         $this->authorize('view', $transfer);
 
-        if($transfer->status !== 'approved') {
+        // منع تصدير PDF للطالب الموقوف
+        if ($transfer->student?->isSuspended()) {
+            return response()->json(['message' => 'لا يمكن تصدير بيانات طالب موقوف'], 403);
+        }
+
+        if ($transfer->status !== 'approved') {
             return response()->json(['message' => 'لم يتم الموافقة على طلب تحويل الطالب'], 403);
         }
 
@@ -95,7 +105,12 @@ class PdfExportController extends Controller
 
         $this->authorize('view', $admission);
 
-        if($admission->status !== 'approved') {
+        // منع تصدير PDF للطالب الموقوف
+        if ($admission->student?->isSuspended()) {
+            return response()->json(['message' => 'لا يمكن تصدير بيانات طالب موقوف'], 403);
+        }
+
+        if ($admission->status !== 'approved') {
             return response()->json(['message' => 'لم يتم الموافقة على طلب القبول المؤقت'], 403);
         }
 
@@ -132,6 +147,12 @@ class PdfExportController extends Controller
         ])->findOrFail($id);
 
         $student = $finalResult->student;
+
+        // منع تصدير PDF للطالب الموقوف
+        if ($student->isSuspended()) {
+            return response()->json(['message' => 'لا يمكن تصدير النتيجة النهائية لطالب موقوف'], 403);
+        }
+
         $enrollment = $student->currentEnrollment
             ?? $student->enrollments()->latest()->first();
 

@@ -14,16 +14,15 @@ class StudentsDataImportController extends Controller
 {
     public function index(Request $request)
     {
-        $students = \App\Models\Student::with(['currentEnrollment.school', 'currentEnrollment.schoolClass','currentEnrollment.academicYear'])
+        $students = \App\Models\Student::with(['currentEnrollment.school', 'currentEnrollment.schoolClass', 'currentEnrollment.academicYear'])
             ->orderBy('id', 'desc')
-            ->paginate(15); // عرض 15 طالب في كل صفحة
+            ->paginate(15);
 
         return view('students.index', compact('students'));
     }
 
     public function importForm()
     {
-        // جلب البيانات للقوائم المنسدلة
         $schools = School::all();
         $school_classes = SchoolClass::all();
         $academicYears = AcademicYear::all();
@@ -54,14 +53,14 @@ class StudentsDataImportController extends Controller
                 $request->class_id,
                 $request->academic_year_id
             );
-            
+
             // 3. تنفيذ الاستيراد
             Excel::import($import, $request->file('file'));
 
             // 4. تجهيز التقرير النهائي
             $stats = $import->stats;
-            $successRate = $stats['total_rows'] > 0 
-                ? round(($stats['successful'] / $stats['total_rows']) * 100, 2) 
+            $successRate = $stats['total_rows'] > 0
+                ? round(($stats['successful'] / $stats['total_rows']) * 100, 2)
                 : 0;
 
             $report = [
@@ -69,6 +68,7 @@ class StudentsDataImportController extends Controller
                     'total_rows'       => $stats['total_rows'],
                     'successful'       => $stats['successful'],
                     'failed'           => $stats['failed'],
+                    'skipped'          => $stats['skipped'] ?? 0,
                     'students_created' => $stats['students_created'],
                     'students_updated' => $stats['students_updated'],
                     'success_rate'     => $successRate
@@ -82,13 +82,11 @@ class StudentsDataImportController extends Controller
                 'success'       => 'تم الانتهاء من عملية استيراد الطلاب بنجاح.',
                 'import_report' => $report
             ]);
-
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             // أخطاء مكتبة إكسل
             $failures = $e->failures();
             Log::error('Excel Validation Error', ['failures' => $failures]);
             return back()->with('error', 'يوجد خطأ في تركيبة ملف الإكسل. يرجى مراجعة البيانات.');
-
         } catch (\Exception $e) {
             // أي أخطاء أخرى (مثل توقف قاعدة البيانات)
             Log::error('Import Error: ' . $e->getMessage());

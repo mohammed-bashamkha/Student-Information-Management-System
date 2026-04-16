@@ -60,6 +60,11 @@ class FinalResultImport implements ToCollection, WithStartRow
                     ]
                 );
 
+                // تخطي الطالب إذا كان موقوفاً
+                if ($student->isSuspended()) {
+                    continue;
+                }
+
                 // إنشاء أو تحديث سجل التسجيل في الصف
                 StudentEnrollment::updateOrCreate(
                     [

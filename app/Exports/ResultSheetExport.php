@@ -35,7 +35,7 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
         $this->subjects = Subject::where('school_class_id', $this->classId)->get();
         $classData = SchoolClass::with('level')->find($this->classId);
         $this->classLevel = $classData->level->name;
-        
+
         $school = School::find($schoolId);
         $this->schoolInfo = [
             'school' => $school->name ?? '',
@@ -45,10 +45,16 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
         ];
     }
 
-    public function title(): string { return $this->title; }
+    public function title(): string
+    {
+        return $this->title;
+    }
 
     // دفع الجدول لأسفل لترك مساحة للترويسة الضخمة
-    public function startCell(): string { return 'A11'; }
+    public function startCell(): string
+    {
+        return 'A11';
+    }
 
     public function drawings()
     {
@@ -65,16 +71,19 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         $this->studentsCollection = Student::whereHas('enrollments', function ($q) {
             $q->where('school_id', $this->schoolId)
-              ->where('class_id', $this->classId)
-              ->where('academic_year_id', $this->academicYearId);
+                ->where('class_id', $this->classId)
+                ->where('academic_year_id', $this->academicYearId);
         })
-        ->whereHas('finalResult', function ($q) {
-            $q->where('academic_year_id', $this->academicYearId)
-              ->where('final_result', $this->status);
-        })
-        ->with(['grades' => fn($q) => $q->where('academic_year_id', $this->academicYearId),
-                'finalResult' => fn($q) => $q->where('academic_year_id', $this->academicYearId)])
-        ->get();
+            ->whereHas('finalResult', function ($q) {
+                $q->where('academic_year_id', $this->academicYearId)
+                    ->where('final_result', $this->status);
+            })
+            ->with([
+                'grades' => fn($q) => $q->where('academic_year_id', $this->academicYearId),
+                'finalResult' => fn($q) => $q->where('academic_year_id', $this->academicYearId)
+            ])
+            ->notSuspended()
+            ->get();
 
         return $this->studentsCollection;
     }
@@ -156,9 +165,11 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $sheet->getColumnDimension('C')->setWidth(40);
                 $sheet->getColumnDimension('AH')->setWidth(14);
                 $sheet->getColumnDimension('AK')->setWidth(16);
-                
+
                 // --- دمج خلايا العناوين للجدول (الآن تبدأ من الصف 12) ---
-                $sheet->mergeCells('A11:A12'); $sheet->mergeCells('B11:B12'); $sheet->mergeCells('C11:C12');
+                $sheet->mergeCells('A11:A12');
+                $sheet->mergeCells('B11:B12');
+                $sheet->mergeCells('C11:C12');
                 $colIdx = 4;
                 foreach ($this->subjects as $sub) {
                     $start = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx);

@@ -231,6 +231,10 @@
                                     <h4>{{ $report['summary']['failed'] }}</h4>
                                     <p>عمليات فاشلة</p>
                                 </div>
+                                <div class="stat-box" style="border-top: 3px solid #fd7e14;">
+                                    <h4 style="color:#fd7e14;">{{ $report['summary']['skipped'] ?? 0 }}</h4>
+                                    <p>طلاب موقوفون (تم تخطيهم)</p>
+                                </div>
                                 <div class="stat-box">
                                     <h4>{{ $report['summary']['students_created'] }}</h4>
                                     <p>طلاب جدد تم إضافتهم</p>
@@ -267,6 +271,23 @@
                                                 <small class="text-muted">
                                                     الاسم: {{ $error['name'] ?? 'غير معروف' }}
                                                 </small>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if(isset($report['warnings']) && count($report['warnings']) > 0)
+                                <div class="mt-3">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        تحذيرات ({{ count($report['warnings']) }})
+                                    </h6>
+                                    <div style="max-height: 200px; overflow-y: auto;">
+                                        @foreach($report['warnings'] as $warning)
+                                            <div class="warning-item">
+                                                <i class="fas fa-ban text-warning me-1"></i>
+                                                {{ $warning }}
                                             </div>
                                         @endforeach
                                     </div>

@@ -23,9 +23,11 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         'total_rows'       => 0,
         'successful'       => 0,
         'failed'           => 0,
+        'skipped'          => 0,
         'students_created' => 0,
         'students_updated' => 0,
         'errors'           => [],
+        'warnings'         => [],
     ];
 
     public function __construct($schoolId, $classId, $academicYearId)
@@ -51,14 +53,15 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         DB::transaction(function () use ($rows) {
             foreach ($rows as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + $this->startRow();
-                
+
                 try {
                     // تخطي الصفوف إذا كان الرقم المدرسي والاسم فارغين
                     if (empty($row[1]) && empty($row[2])) continue;
 
-                    $this->processRow($row, $actualRowNumber);
-                    $this->stats['successful']++;
-
+                    $processed = $this->processRow($row, $actualRowNumber);
+                    if ($processed) {
+                        $this->stats['successful']++;
+                    }
                 } catch (\Exception $e) {
                     $this->stats['failed']++;
                     $this->stats['errors'][] = [
@@ -73,7 +76,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         });
     }
 
-    private function processRow(Collection $row, int $rowNumber)
+    private function processRow(Collection $row, int $rowNumber): bool
     {
         /**
          * ترتيب الأعمدة بناءً على التصدير الأخير (9 أعمدة):
@@ -102,12 +105,27 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         // 2. التحقق من البيانات
         if (!$schoolNumber) throw new \Exception("الرقم المدرسي مفقود.");
         if (!$fullName) throw new \Exception("اسم الطالب مفقود.");
-        
+
+        // 2b. تخطي الطالب إذا كان موقوفاً في هذه السنة الدراسية تحديداً
+        $existingForCheck = Student::where('school_number', $schoolNumber)->first();
+        if ($existingForCheck) {
+            $isSuspendedInThisYear = $existingForCheck->enrollments()
+                ->where('academic_year_id', $this->academicYearId)
+                ->where('status', 'suspended')
+                ->exists();
+
+            if ($isSuspendedInThisYear) {
+                $this->stats['skipped']++;
+                $this->stats['warnings'][] = "الطالب [{$fullName}] (رقم: {$schoolNumber}) موقوف - تم تخطيه.";
+                return false;
+            }
+        }
+
         // التحقق من أن الاسم رباعي (يحتوي على 3 مسافات على الأقل)
         if (!preg_match('/^(\S+\s){3,}\S+$/u', $fullName)) {
             throw new \Exception("الاسم [" . $fullName . "] يجب أن يكون رباعياً على الأقل (3 مسافات).");
         }
-        
+
         $gender = $this->mapGender($genderText, $rowNumber);
 
         // 3. إنشاء أو تحديث بيانات الطالب الأساسية
@@ -137,7 +155,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
                 'date_of_birth'     => $this->transformDate($dob),
                 'registration_date' => $this->transformDate($regDate) ?? now(),
             ]);
-        
+
             $this->stats['students_updated']++;
         } else {
             $this->stats['students_created']++;
@@ -156,6 +174,8 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
                 'created_by' => $this->userId,
             ]
         );
+
+        return true;
     }
 
     private function mapGender($value, $rowNumber)
@@ -163,7 +183,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         $value = trim($value);
         if ($value === 'ذكر') return 'male';
         if ($value === 'أنثى') return 'female';
-        
+
         throw new \Exception("قيمة الجنس غير صحيحة (يجب ذكر أو أنثى). القيمة المكتوبة: [{$value}]");
     }
 
@@ -182,7 +202,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
             }
             return Carbon::parse($value);
         } catch (\Exception $e) {
-            return null; 
+            return null;
         }
     }
 

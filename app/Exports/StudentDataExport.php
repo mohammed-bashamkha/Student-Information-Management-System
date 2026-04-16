@@ -35,7 +35,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
 
         $this->schoolInfo = [
             'school' => $school->name ?? '',
-            'directorate' => $school->directorate ?? 'المكلا', 
+            'directorate' => $school->directorate ?? 'المكلا',
             'class' => $class->name ?? '',
             'year' => $year->year ?? '',
         ];
@@ -66,15 +66,16 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         $this->studentsCollection = Student::whereHas('enrollments', function ($q) {
             $q->where('school_id', $this->schoolId)
-              ->where('class_id', $this->classId)
-              ->where('academic_year_id', $this->academicYearId);
+                ->where('class_id', $this->classId)
+                ->where('academic_year_id', $this->academicYearId);
         })
-        ->with(['enrollments' => function($q) {
-            $q->where('school_id', $this->schoolId)
-              ->where('class_id', $this->classId)
-              ->where('academic_year_id', $this->academicYearId);
-        }])
-        ->get();
+            ->with(['enrollments' => function ($q) {
+                $q->where('school_id', $this->schoolId)
+                    ->where('class_id', $this->classId)
+                    ->where('academic_year_id', $this->academicYearId);
+            }])
+            ->notSuspended()
+            ->get();
 
         return $this->studentsCollection;
     }
@@ -120,7 +121,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
-                
+
                 // تم تعديل أعلى عمود إلى I بدلاً من J
                 $highestCol = 'I';
                 $highestRow = $sheet->getHighestRow();

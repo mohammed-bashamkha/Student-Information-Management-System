@@ -35,6 +35,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         'total_rows'          => 0,
         'successful'          => 0,
         'failed'              => 0,
+        'skipped'             => 0,
         'students_created'    => 0,
         'students_updated'    => 0,
         'enrollments_created' => 0,
@@ -104,6 +105,14 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         // التحقق من البيانات الأساسية
         $this->validateStudentData($studentNumber, $studentName, $rowNumber);
+
+        // التحقق المسبق: هل الطالب موقوف قبل البحث/الإنشاء؟
+        $existingForCheck = Student::where('school_number', $studentNumber)->first();
+        if ($existingForCheck && $existingForCheck->isSuspended()) {
+            $this->stats['skipped']++;
+            $this->stats['warnings'][] = "الطالب [{$studentName}] (رقم: {$studentNumber}) في الصف {$rowNumber} موقوف - تم تخطيه.";
+            return;
+        }
 
         // البحث عن الطالب أو إنشاؤه
         $student = $this->findOrCreateStudent($studentNumber, $studentName);
@@ -209,8 +218,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                 }
             }
 
-            if ($firstSemesterGrade !== null || $secondSemesterGrade !== null || $totalGrade !== null)
-            {
+            if ($firstSemesterGrade !== null || $secondSemesterGrade !== null || $totalGrade !== null) {
                 Grade::updateOrCreate(
                     [
                         'student_id' => $student->id,
@@ -227,7 +235,6 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                     ]
                 );
             }
-            
         }
     }
 
@@ -243,11 +250,10 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
         $notes = $this->sanitizeValue($row[$finalResultStartIndex + 3] ?? null);
 
-        if($totalStudentGrades === null || $gpa === null || $finalResult === null)
-        {
+        if ($totalStudentGrades === null || $gpa === null || $finalResult === null) {
             $calcService = new ResultCalculationService();
             $calcService->calculateFinalResult($student->id, $this->academicYearId, $this->userId);
-        }else {
+        } else {
             FinalResult::updateOrCreate(
                 [
                     'student_id' => $student->id,
@@ -325,6 +331,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                 'total_rows'          => $this->stats['total_rows'],
                 'successful'          => $this->stats['successful'],
                 'failed'              => $this->stats['failed'],
+                'skipped'             => $this->stats['skipped'],
                 'students_created'    => $this->stats['students_created'],
                 'students_updated'    => $this->stats['students_updated'],
                 'enrollments_created' => $this->stats['enrollments_created'],
