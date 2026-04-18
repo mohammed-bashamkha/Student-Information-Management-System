@@ -254,7 +254,7 @@ GET /api/pdf/final-result/{id}</a>
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: April 16, 2026</li>
+        <li>Last updated: April 17, 2026</li>
     </ul>
 </div>
 
@@ -2227,9 +2227,9 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"year\": \"bngzmiy\",
-    \"start_date\": \"2026-04-16T14:40:14\",
-    \"end_date\": \"2026-04-16T14:40:14\",
-    \"status\": true
+    \"start_date\": \"2026-04-17T15:53:37\",
+    \"end_date\": \"2026-04-17T15:53:37\",
+    \"status\": false
 }"
 </code></pre></div>
 
@@ -2247,9 +2247,9 @@ const headers = {
 
 let body = {
     "year": "bngzmiy",
-    "start_date": "2026-04-16T14:40:14",
-    "end_date": "2026-04-16T14:40:14",
-    "status": true
+    "start_date": "2026-04-17T15:53:37",
+    "end_date": "2026-04-17T15:53:37",
+    "status": false
 };
 
 fetch(url, {
@@ -2365,10 +2365,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-academic-year"
-               value="2026-04-16T14:40:14"
+               value="2026-04-17T15:53:37"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:14</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:37</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2377,10 +2377,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-academic-year"
-               value="2026-04-16T14:40:14"
+               value="2026-04-17T15:53:37"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:14</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:37</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
@@ -2402,7 +2402,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
         </form>
 
@@ -2425,8 +2425,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"start_date\": \"2026-04-16T14:40:14\",
-    \"end_date\": \"2026-04-16T14:40:14\",
+    \"start_date\": \"2026-04-17T15:53:37\",
+    \"end_date\": \"2026-04-17T15:53:37\",
     \"status\": true
 }"
 </code></pre></div>
@@ -2444,8 +2444,8 @@ const headers = {
 };
 
 let body = {
-    "start_date": "2026-04-16T14:40:14",
-    "end_date": "2026-04-16T14:40:14",
+    "start_date": "2026-04-17T15:53:37",
+    "end_date": "2026-04-17T15:53:37",
     "status": true
 };
 
@@ -2579,10 +2579,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="PUTapi-academic-year--id-"
-               value="2026-04-16T14:40:14"
+               value="2026-04-17T15:53:37"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:14</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:37</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2591,10 +2591,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="PUTapi-academic-year--id-"
-               value="2026-04-16T14:40:14"
+               value="2026-04-17T15:53:37"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:14</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:37</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
@@ -2921,7 +2921,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"b\",
-    \"school_type\": \"public\",
+    \"school_type\": \"private\",
     \"address\": \"n\"
 }"
 </code></pre></div>
@@ -2940,7 +2940,7 @@ const headers = {
 
 let body = {
     "name": "b",
-    "school_type": "public",
+    "school_type": "private",
     "address": "n"
 };
 
@@ -3057,10 +3057,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="school_type"                data-endpoint="POSTapi-schools"
-               value="public"
+               value="private"
                data-component="body">
     <br>
-<p>Example: <code>public</code></p>
+<p>Example: <code>private</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>public</code></li> <li><code>private</code></li></ul>
         </div>
@@ -5985,9 +5985,9 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"seat_number\": 16,
     \"full_name\": \"SSSs{3,}SS\",
     \"nationality\": \"i\",
-    \"gender\": \"female\",
-    \"date_of_birth\": \"2026-04-16T14:40:15\",
-    \"registration_date\": \"2026-04-16T14:40:15\",
+    \"gender\": \"male\",
+    \"date_of_birth\": \"2026-04-17T15:53:38\",
+    \"registration_date\": \"2026-04-17T15:53:38\",
     \"school_id\": \"architecto\",
     \"class_id\": \"architecto\",
     \"academic_year_id\": \"architecto\"
@@ -6011,9 +6011,9 @@ let body = {
     "seat_number": 16,
     "full_name": "SSSs{3,}SS",
     "nationality": "i",
-    "gender": "female",
-    "date_of_birth": "2026-04-16T14:40:15",
-    "registration_date": "2026-04-16T14:40:15",
+    "gender": "male",
+    "date_of_birth": "2026-04-17T15:53:38",
+    "registration_date": "2026-04-17T15:53:38",
     "school_id": "architecto",
     "class_id": "architecto",
     "academic_year_id": "architecto"
@@ -6168,10 +6168,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="gender"                data-endpoint="POSTapi-students"
-               value="female"
+               value="male"
                data-component="body">
     <br>
-<p>Example: <code>female</code></p>
+<p>Example: <code>male</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>male</code></li> <li><code>female</code></li></ul>
         </div>
@@ -6182,10 +6182,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="date_of_birth"                data-endpoint="POSTapi-students"
-               value="2026-04-16T14:40:15"
+               value="2026-04-17T15:53:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:15</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_date</code></b>&nbsp;&nbsp;
@@ -6194,10 +6194,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="registration_date"                data-endpoint="POSTapi-students"
-               value="2026-04-16T14:40:15"
+               value="2026-04-17T15:53:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:15</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>school_id</code></b>&nbsp;&nbsp;
@@ -6413,8 +6413,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"nationality\": \"architecto\",
     \"gender\": \"female\",
-    \"date_of_birth\": \"2026-04-16T14:40:16\",
-    \"registration_date\": \"2026-04-16T14:40:16\",
+    \"date_of_birth\": \"2026-04-17T15:53:38\",
+    \"registration_date\": \"2026-04-17T15:53:38\",
     \"school_id\": \"architecto\",
     \"class_id\": \"architecto\",
     \"academic_year_id\": \"architecto\",
@@ -6437,8 +6437,8 @@ const headers = {
 let body = {
     "nationality": "architecto",
     "gender": "female",
-    "date_of_birth": "2026-04-16T14:40:16",
-    "registration_date": "2026-04-16T14:40:16",
+    "date_of_birth": "2026-04-17T15:53:38",
+    "registration_date": "2026-04-17T15:53:38",
     "school_id": "architecto",
     "class_id": "architecto",
     "academic_year_id": "architecto",
@@ -6589,10 +6589,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="date_of_birth"                data-endpoint="PUTapi-students--id-"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_date</code></b>&nbsp;&nbsp;
@@ -6601,10 +6601,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="registration_date"                data-endpoint="PUTapi-students--id-"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>school_id</code></b>&nbsp;&nbsp;
@@ -6819,8 +6819,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "academic_year_id=architecto"\
     --form "certificate_type=n"\
     --form "notes=g"\
-    --form "request_date=2026-04-16T14:40:16"\
-    --form "student_image=@C:\Users\Mohammed\AppData\Local\Temp\phpEC9D.tmp" </code></pre></div>
+    --form "request_date=2026-04-17T15:53:38"\
+    --form "student_image=@C:\Users\Mohammed\AppData\Local\Temp\phpA6D.tmp" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -6841,7 +6841,7 @@ body.append('class_id', 'architecto');
 body.append('academic_year_id', 'architecto');
 body.append('certificate_type', 'n');
 body.append('notes', 'g');
-body.append('request_date', '2026-04-16T14:40:16');
+body.append('request_date', '2026-04-17T15:53:38');
 body.append('student_image', document.querySelector('input[name="student_image"]').files[0]);
 
 fetch(url, {
@@ -7017,10 +7017,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="request_date"                data-endpoint="POSTapi-certificate-replacements"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>student_image</code></b>&nbsp;&nbsp;
@@ -7032,7 +7032,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 1024 kilobytes. Example: <code>C:\Users\Mohammed\AppData\Local\Temp\phpEC9D.tmp</code></p>
+<p>Must be an image. Must not be greater than 1024 kilobytes. Example: <code>C:\Users\Mohammed\AppData\Local\Temp\phpA6D.tmp</code></p>
         </div>
         </form>
 
@@ -7057,7 +7057,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"certificate_type\": \"b\",
     \"notes\": \"n\",
-    \"request_date\": \"2026-04-16T14:40:16\"
+    \"request_date\": \"2026-04-17T15:53:39\"
 }"
 </code></pre></div>
 
@@ -7076,7 +7076,7 @@ const headers = {
 let body = {
     "certificate_type": "b",
     "notes": "n",
-    "request_date": "2026-04-16T14:40:16"
+    "request_date": "2026-04-17T15:53:39"
 };
 
 fetch(url, {
@@ -7221,10 +7221,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="request_date"                data-endpoint="PUTapi-certificate-replacements--id-"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:39"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:39</code></p>
         </div>
         </form>
 
@@ -7980,8 +7980,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"status\": \"pending\",
-    \"approval_date\": \"2026-04-16T14:40:16\",
+    \"status\": \"rejected\",
+    \"approval_date\": \"2026-04-17T15:53:39\",
     \"reason\": \"architecto\",
     \"based_on\": \"architecto\"
 }"
@@ -8000,8 +8000,8 @@ const headers = {
 };
 
 let body = {
-    "status": "pending",
-    "approval_date": "2026-04-16T14:40:16",
+    "status": "rejected",
+    "approval_date": "2026-04-17T15:53:39",
     "reason": "architecto",
     "based_on": "architecto"
 };
@@ -8124,10 +8124,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="PUTapi-transfers-admissions--id-"
-               value="pending"
+               value="rejected"
                data-component="body">
     <br>
-<p>Example: <code>pending</code></p>
+<p>Example: <code>rejected</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>pending</code></li> <li><code>approved</code></li> <li><code>rejected</code></li></ul>
         </div>
@@ -8138,10 +8138,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="approval_date"                data-endpoint="PUTapi-transfers-admissions--id-"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:39"
                data-component="body">
     <br>
-<p>This field is required when <code>status</code> is <code>approved</code>. Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>This field is required when <code>status</code> is <code>approved</code>. Must be a valid date. Example: <code>2026-04-17T15:53:39</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>reason</code></b>&nbsp;&nbsp;
@@ -8329,7 +8329,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"student_id\": \"architecto\",
     \"to_school_id\": \"architecto\",
-    \"request_date\": \"2026-04-16T14:40:16\",
+    \"request_date\": \"2026-04-17T15:53:39\",
     \"reason\": \"architecto\",
     \"based_on\": \"architecto\",
     \"status\": \"approved\"
@@ -8351,7 +8351,7 @@ const headers = {
 let body = {
     "student_id": "architecto",
     "to_school_id": "architecto",
-    "request_date": "2026-04-16T14:40:16",
+    "request_date": "2026-04-17T15:53:39",
     "reason": "architecto",
     "based_on": "architecto",
     "status": "approved"
@@ -8482,10 +8482,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="request_date"                data-endpoint="POSTapi-transfers"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:39"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:39</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>reason</code></b>&nbsp;&nbsp;
@@ -8548,10 +8548,10 @@ Must be one of:
     --data "{
     \"student_id\": \"architecto\",
     \"to_school_id\": \"architecto\",
-    \"request_date\": \"2026-04-16T14:40:16\",
+    \"request_date\": \"2026-04-17T15:53:39\",
     \"reason\": \"architecto\",
-    \"start_date\": \"2026-04-16T14:40:16\",
-    \"end_date\": \"2052-05-09\",
+    \"start_date\": \"2026-04-17T15:53:39\",
+    \"end_date\": \"2052-05-10\",
     \"based_on\": \"architecto\"
 }"
 </code></pre></div>
@@ -8571,10 +8571,10 @@ const headers = {
 let body = {
     "student_id": "architecto",
     "to_school_id": "architecto",
-    "request_date": "2026-04-16T14:40:16",
+    "request_date": "2026-04-17T15:53:39",
     "reason": "architecto",
-    "start_date": "2026-04-16T14:40:16",
-    "end_date": "2052-05-09",
+    "start_date": "2026-04-17T15:53:39",
+    "end_date": "2052-05-10",
     "based_on": "architecto"
 };
 
@@ -8703,10 +8703,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="request_date"                data-endpoint="POSTapi-admissions"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:39"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:39</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>reason</code></b>&nbsp;&nbsp;
@@ -8727,10 +8727,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-admissions"
-               value="2026-04-16T14:40:16"
+               value="2026-04-17T15:53:39"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-16T14:40:16</code></p>
+<p>Must be a valid date. Example: <code>2026-04-17T15:53:39</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -8739,10 +8739,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-admissions"
-               value="2052-05-09"
+               value="2052-05-10"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-05-09</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-05-10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>based_on</code></b>&nbsp;&nbsp;
