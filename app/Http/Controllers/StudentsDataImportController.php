@@ -54,6 +54,10 @@ class StudentsDataImportController extends Controller
                 $request->academic_year_id
             );
 
+            if ($request->boolean('preview')) {
+                $import->preview = true;
+            }
+
             // 3. تنفيذ الاستيراد
             Excel::import($import, $request->file('file'));
 
@@ -76,6 +80,14 @@ class StudentsDataImportController extends Controller
                 'errors'   => $stats['errors'] ?? [],
                 'warnings' => $stats['warnings'] ?? []
             ];
+
+            if ($request->boolean('preview')) {
+                return response()->json([
+                    'status' => 'preview',
+                    'report' => $report,
+                    'sample_data' => $import->previewData,
+                ]);
+            }
 
             // 5. إعادة التوجيه مع رسالة النجاح والتقرير
             return back()->with([

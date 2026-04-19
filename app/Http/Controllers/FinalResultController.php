@@ -127,9 +127,23 @@ class FinalResultController extends Controller
                 $request->school_id
             );
 
+            if ($request->boolean('preview')) {
+                $import->preview = true;
+            }
+
             Excel::import($import, $request->file('file'));
+
             // الحصول على تقرير الاستيراد
             $report = $import->getImportReport();
+
+            if ($request->boolean('preview')) {
+                return response()->json([
+                    'status' => 'preview',
+                    'report' => $report,
+                    'sample_data' => $import->previewData,
+                ]);
+            }
+
             // التحقق من وجود أخطاء
             if ($report['summary']['failed'] > 0) {
                 return redirect()->back()

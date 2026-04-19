@@ -330,7 +330,7 @@
                     <hr class="my-4">
 
                     <!-- Import Form -->
-                    <form action="{{ route('import.submit') }}" method="POST" enctype="multipart/form-data">
+                    <form id="importForm" action="{{ route('import.submit') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         <div class="row g-3 mb-4">
@@ -419,6 +419,25 @@
     </div>
 </div>
 
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true" dir="rtl">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <h5 class="modal-title" id="previewModalLabel"><i class="fas fa-search me-2"></i>معاينة الاستيراد قبل الاعتماد النهائي</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="previewModalBody">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-success" id="confirmImportBtn">
+            <i class="fas fa-check me-2"></i>تأكيد الحفظ في قاعدة البيانات
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function updateFileName(input) {
@@ -461,6 +480,98 @@
         fileInput.files = files;
         updateFileName(fileInput);
     }, false);
+
+    // Preview Logic
+    const importForm = document.getElementById('importForm');
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const confirmImportBtn = document.getElementById('confirmImportBtn');
+    const submitBtn = importForm.querySelector('button[type="submit"]');
+
+    importForm.addEventListener('submit', function(e) {
+        if (!importForm.dataset.previewed) {
+            e.preventDefault(); // Stop normal submission
+            
+            let formData = new FormData(importForm);
+            formData.append('preview', '1');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري تحليل النتائج... (ثواني معدودة)';
+
+            fetch(importForm.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => {
+                if(!response.ok) throw new Error('Network error');
+                return response.json();
+            })
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-file-upload me-2"></i>رفع واستيراد النتائج';
+                
+                if (data.status === 'preview') {
+                    const report = data.report.summary ? data.report.summary : data.report;
+                    const errs = data.report.errors ? data.report.errors : [];
+                    const warns = data.report.warnings ? data.report.warnings : [];
+
+                    let html = `
+                        <div class="alert alert-info py-2"><i class="fas fa-info-circle me-1"></i> هذه محاكاة سريعة لتأثير استيراد الدرجات على النظام. <strong>لم يتم حفظ أي درجة بعد!</strong></div>
+                        <div class="row text-center mb-3 g-2">
+                            <div class="col-3"><div class="p-2 border rounded bg-light"><strong>إجمالي الصفوف</strong><br>${report.total_rows || 0}</div></div>
+                            <div class="col-3"><div class="p-2 border rounded bg-success text-white"><strong>الصفوف السليمة</strong><br>${report.successful || 0}</div></div>
+                            <div class="col-3"><div class="p-2 border rounded bg-danger text-white"><strong>الفشل/الأخطاء</strong><br>${report.failed || 0}</div></div>
+                            <div class="col-3"><div class="p-2 border rounded bg-warning"><strong>تخطي (محولين)</strong><br>${report.skipped || 0}</div></div>
+                        </div>
+                        <div class="row text-center mb-3 g-2">
+                            <div class="col-6"><div class="p-2 border rounded text-primary" style="background:#e9ecef;"><strong>إدخال درجات ونتائج لطلاب جدد</strong><br>${report.students_created || report.enrollments_created || 0}</div></div>
+                            <div class="col-6"><div class="p-2 border rounded text-info" style="background:#e9ecef;"><strong>تحديث نتائج لطلاب موجودين مسبقاً</strong><br>${report.students_updated || 0}</div></div>
+                        </div>
+                    `;
+
+                    if (errs && errs.length > 0) {
+                         html += `<div class="alert alert-danger py-2 mt-2 mb-2"><i class="fas fa-times-circle"></i> تنبيه: يوجد ${errs.length} أخطاء بالصفوف!</div>`;
+                    }
+                    if (warns && warns.length > 0) {
+                         html += `<div class="alert alert-warning py-2 mt-2 mb-2"><i class="fas fa-exclamation-triangle"></i> إشعار: لاحظنا ${warns.length} تحذيرات.</div>`;
+                    }
+                    
+                    if (data.sample_data && data.sample_data.length > 0) {
+                        html += `<h6 class="mt-3">عينة من ملف النتائج المرفوع (أول ${data.sample_data.length} طلاب):</h6>
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light"><tr><th>الرقم الأكاديمي</th><th>الاسم</th><th>نوع العملية</th></tr></thead>
+                            <tbody>`;
+                        data.sample_data.forEach(row => {
+                            html += `<tr><td>${row.school_number || row.student_number}</td><td>${row.full_name || row.student_name}</td><td><span class="badge ${row.status == 'طالب جديد' ? 'bg-success' : 'bg-primary'}">${row.status}</span></td></tr>`;
+                        });
+                        html += `</tbody></table>`;
+                    }
+                    
+                    document.getElementById('previewModalBody').innerHTML = html;
+                    previewModal.show();
+                } else {
+                    alert('فشلت محاولة استرجاع المعاينة.');
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-file-upload me-2"></i>رفع واستيراد النتائج';
+                
+                // Allow direct submission if preview fails
+                importForm.dataset.previewed = 'true';
+                importForm.submit();
+            });
+        }
+    });
+
+    confirmImportBtn.addEventListener('click', function() {
+        confirmImportBtn.disabled = true;
+        confirmImportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري الحفظ النهائي بالمخدم...';
+        importForm.dataset.previewed = 'true';
+        importForm.submit();
+    });
 </script>
 </body>
 </html>

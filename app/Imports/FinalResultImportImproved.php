@@ -29,6 +29,9 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     protected $schoolId;
     protected $userId;
 
+    public $preview = false;
+    public $previewData = [];
+
     private $subjectsCache = [];
 
     // إحصائيات الاستيراد
@@ -117,27 +120,29 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             }
 
             // تنفيذ عمليات الإدراج أو التحديث المجمعة Bulk Upsert
-            if (!empty($gradesToUpsert)) {
-                Grade::upsert(
-                    $gradesToUpsert,
-                    ['student_id', 'subject_id', 'academic_year_id'],
-                    ['school_id', 'class_id', 'first_semester_total', 'second_semester_total', 'total', 'updated_at', 'created_by']
-                );
-            }
+            if (!$this->preview) {
+                if (!empty($gradesToUpsert)) {
+                    Grade::upsert(
+                        $gradesToUpsert,
+                        ['student_id', 'subject_id', 'academic_year_id'],
+                        ['school_id', 'class_id', 'first_semester_total', 'second_semester_total', 'total', 'updated_at', 'created_by']
+                    );
+                }
 
-            if (!empty($finalResultsToUpsert)) {
-                FinalResult::upsert(
-                    $finalResultsToUpsert,
-                    ['student_id', 'academic_year_id'],
-                    ['total_student_grades', 'average_grade', 'final_result', 'notes', 'updated_at', 'created_by']
-                );
-            }
+                if (!empty($finalResultsToUpsert)) {
+                    FinalResult::upsert(
+                        $finalResultsToUpsert,
+                        ['student_id', 'academic_year_id'],
+                        ['total_student_grades', 'average_grade', 'final_result', 'notes', 'updated_at', 'created_by']
+                    );
+                }
 
-            // تحديث النتائج التلقائية بعد إدراج كل الدرجات
-            if (!empty($studentsToCalculate)) {
-                $calcService = new ResultCalculationService();
-                foreach ($studentsToCalculate as $studentId) {
-                    $calcService->calculateFinalResult($studentId, $this->academicYearId, $this->userId);
+                // تحديث النتائج التلقائية بعد إدراج كل الدرجات
+                if (!empty($studentsToCalculate)) {
+                    $calcService = new ResultCalculationService();
+                    foreach ($studentsToCalculate as $studentId) {
+                        $calcService->calculateFinalResult($studentId, $this->academicYearId, $this->userId);
+                    }
                 }
             }
         });
@@ -176,37 +181,52 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         // إنشاء أو تحديث الطالب
         if ($existingForCheck) {
-            $existingForCheck->update([
-                'full_name'  => $studentName,
-            ]);
+            if (!$this->preview) {
+                $existingForCheck->update([
+                    'full_name'  => $studentName,
+                ]);
+            }
             $studentId = $existingForCheck->id;
             $this->stats['students_updated']++;
         } else {
-            $newStudent = Student::create([
-                'school_number' => $studentNumber,
-                'full_name'  => $studentName,
-                'created_by' => $this->userId,
-            ]);
-            $studentId = $newStudent->id;
+            if (!$this->preview) {
+                $newStudent = Student::create([
+                    'school_number' => $studentNumber,
+                    'full_name'  => $studentName,
+                    'created_by' => $this->userId,
+                ]);
+                $studentId = $newStudent->id;
+            } else {
+                $newStudent = new Student(['school_number' => $studentNumber, 'full_name' => $studentName]);
+                $newStudent->id = rand(1000000, 9999999);
+                $studentId = $newStudent->id;
+            }
             $this->stats['students_created']++;
             $existingStudents->put($studentNumber, $newStudent);
         }
 
         // تسجيل الطالب (Enrollment)
-        $enrollment = StudentEnrollment::updateOrCreate(
-            [
-                'student_id'       => $studentId,
-                'academic_year_id' => $this->academicYearId,
-            ],
-            [
-                'school_id'  => $this->schoolId,
-                'class_id'   => $this->classId,
-                'created_by' => $this->userId,
-            ]
-        );
+        if (!$this->preview) {
+            $enrollment = StudentEnrollment::updateOrCreate(
+                [
+                    'student_id'       => $studentId,
+                    'academic_year_id' => $this->academicYearId,
+                ],
+                [
+                    'school_id'  => $this->schoolId,
+                    'class_id'   => $this->classId,
+                    'created_by' => $this->userId,
+                ]
+            );
 
-        if ($enrollment->wasRecentlyCreated) {
-            $this->stats['enrollments_created']++;
+            if ($enrollment->wasRecentlyCreated) {
+                $this->stats['enrollments_created']++;
+            }
+        } else {
+            $hasEnrollment = $existingForCheck ? $existingForCheck->enrollments->where('academic_year_id', $this->academicYearId)->isNotEmpty() : false;
+            if (!$hasEnrollment) {
+                $this->stats['enrollments_created']++;
+            }
         }
 
         // معالجة درجات المواد
@@ -214,6 +234,14 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         // معالجة النتيجة النهائية
         $this->collectFinalResult($studentId, $subjects, $row, $rowNumber, $finalResultsToUpsert, $studentsToCalculate);
+
+        if ($this->preview && count($this->previewData) < 5) {
+            $this->previewData[] = [
+                'student_number' => $studentNumber,
+                'student_name' => $studentName,
+                'status' => $existingForCheck ? 'تحديث نتائج' : 'طالب جديد'
+            ];
+        }
     }
 
     /**

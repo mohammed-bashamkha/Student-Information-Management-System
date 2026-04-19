@@ -19,6 +19,8 @@ use Carbon\Carbon;
 class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChunkReading
 {
     protected $schoolId, $classId, $academicYearId, $userId;
+    public $preview = false;
+    public $previewData = [];
 
     public $stats = [
         'total_rows'       => 0,
@@ -160,30 +162,38 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
 
         // 3. إنشاء أو تحديث بيانات الطالب الأساسية
         if ($existingForCheck) {
-            $existingForCheck->update([
-                'full_name'         => $fullName,
-                'seat_number'       => $seatNumber,
-                'nationality'       => $nationality,
-                'gender'            => $gender,
-                'date_of_birth'     => $this->transformDate($dob),
-                'registration_date' => $this->transformDate($regDate) ?? now(),
-            ]);
+            if (!$this->preview) {
+                $existingForCheck->update([
+                    'full_name'         => $fullName,
+                    'seat_number'       => $seatNumber,
+                    'nationality'       => $nationality,
+                    'gender'            => $gender,
+                    'date_of_birth'     => $this->transformDate($dob),
+                    'registration_date' => $this->transformDate($regDate) ?? now(),
+                ]);
+            }
 
             $studentId = $existingForCheck->id;
             $this->stats['students_updated']++;
         } else {
-            $newStudent = Student::create([
-                'school_number'     => $schoolNumber,
-                'full_name'         => $fullName,
-                'seat_number'       => $seatNumber,
-                'nationality'       => $nationality,
-                'gender'            => $gender,
-                'date_of_birth'     => $this->transformDate($dob),
-                'registration_date' => $this->transformDate($regDate) ?? now(),
-                'created_by'        => $this->userId,
-            ]);
+            if (!$this->preview) {
+                $newStudent = Student::create([
+                    'school_number'     => $schoolNumber,
+                    'full_name'         => $fullName,
+                    'seat_number'       => $seatNumber,
+                    'nationality'       => $nationality,
+                    'gender'            => $gender,
+                    'date_of_birth'     => $this->transformDate($dob),
+                    'registration_date' => $this->transformDate($regDate) ?? now(),
+                    'created_by'        => $this->userId,
+                ]);
+                $studentId = $newStudent->id;
+            } else {
+                $newStudent = new Student(['school_number' => $schoolNumber, 'full_name' => $fullName]);
+                $newStudent->id = rand(1000000, 9999999);
+                $studentId = $newStudent->id;
+            }
 
-            $studentId = $newStudent->id;
             $this->stats['students_created']++;
 
             // إضافة الطالب الجديد للاستعلامات اللاحقة في نفس الـ Chunk
@@ -191,17 +201,28 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
         }
 
         // 4. ربط الطالب بالسنة والدراسة (Enrollment)
-        StudentEnrollment::updateOrCreate(
-            [
-                'student_id'       => $studentId,
-                'academic_year_id' => $this->academicYearId,
-            ],
-            [
-                'school_id'  => $this->schoolId,
-                'class_id'   => $this->classId,
-                'created_by' => $this->userId,
-            ]
-        );
+        if (!$this->preview) {
+            StudentEnrollment::updateOrCreate(
+                [
+                    'student_id'       => $studentId,
+                    'academic_year_id' => $this->academicYearId,
+                ],
+                [
+                    'school_id'  => $this->schoolId,
+                    'class_id'   => $this->classId,
+                    'created_by' => $this->userId,
+                ]
+            );
+        }
+
+        if ($this->preview && count($this->previewData) < 5) {
+            $this->previewData[] = [
+                'school_number' => $schoolNumber,
+                'full_name'     => $fullName,
+                'nationality'   => $nationality,
+                'status'        => $existingForCheck ? 'تحديث' : 'طالب جديد'
+            ];
+        }
 
         return true;
     }
