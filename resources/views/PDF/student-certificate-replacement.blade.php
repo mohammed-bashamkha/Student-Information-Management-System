@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>طلب استخراج بدلاً عن فاقد - نسخة الطالب</title>
     <style>
-      {!! file_get_contents(public_path('fonts/pdf-fonts.css')) !!}
+        @include('PDF._fonts')
 
       * {
         margin: 0;
@@ -341,7 +341,7 @@
           <div>محافظة حضرموت الساحل</div>
         </div>
         <div class="header-center">
-          <img src="{{ asset('images/yemen.logo.png') }}" alt="شعار الجمهورية اليمنية">
+          <img src="{{ public_path('images/yemen.logo.png') }}" alt="شعار الجمهورية اليمنية">
         </div>
         <div class="header-left">
           <div>رقم النموذج: <span>{{ $certificate->id }}</span></div>
@@ -407,7 +407,7 @@
           <!-- Student Photo -->
           <div class="photo-area">
             @if($certificate->student_image)
-              <img src="{{ asset('storage/' . $certificate->student_image) }}" style="width:120px;height:150px;object-fit:cover;" alt="صورة الطالب">
+              <img src="{{ public_path('storage/' . $certificate->student_image) }}" style="width:120px;height:150px;object-fit:cover;" alt="صورة الطالب">
             @else
               <div class="photo-placeholder">صورة<br />الطالب</div>
             @endif

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>قبول مؤقت - {{ $student->full_name ?? '' }}</title>
     <style>
-        {!! file_get_contents(public_path('fonts/pdf-fonts.css')) !!}
+        @include('PDF._fonts')
 
         * {
             margin: 0;

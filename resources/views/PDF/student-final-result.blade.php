@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>شهادة تقييم أعمال السنة واختبار النقل</title>
     <style>
-      {!! file_get_contents(public_path('fonts/pdf-fonts.css')) !!}
+      @include('PDF._fonts')
 
       * {
         margin: 0;
