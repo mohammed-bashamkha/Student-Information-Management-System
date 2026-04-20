@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طلب استخراج بدلاً عن فاقد - نسخة المكتب</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap');
+        {!! file_get_contents(public_path('fonts/pdf-fonts.css')) !!}
 
         * {
             margin: 0;
