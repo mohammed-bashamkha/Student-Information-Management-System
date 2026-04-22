@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Error;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use App\Exports\StudentErrorExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ErrorController extends Controller
 {
@@ -68,5 +70,21 @@ class ErrorController extends Controller
             'message' => 'تم حدف سجل خطاء بيانات الطالب بنجاح',
             'data' => $errorRecord->student()->full_name
         ], 200);
+    }
+
+    public function exportStudentErrors(Request $request)
+    {
+        $request->validate([
+            'academic_year_id' => 'required|exists:academic_years,id',
+        ]);
+
+        $fileName = 'Student_Errors_' . now()->format('Y_m_d') . '.xlsx';
+
+        return Excel::download(
+            new StudentErrorExport(
+                $request->academic_year_id
+            ),
+            $fileName
+        );
     }
 }

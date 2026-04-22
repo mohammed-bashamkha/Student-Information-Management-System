@@ -24,14 +24,14 @@ class FinalResultExportController extends Controller
         $classId = $request->class_id;
         $academicYearId = $request->academic_year_id;
 
-        $sId = School::where('id',$schoolId)->value('name');
+        $sId = School::where('id', $schoolId)->value('name');
         $cId = SchoolClass::where('id', $classId)->value('name');
         $aId = AcademicYear::where('id', $academicYearId)->value('year');
 
-        $fileName = "النتائج_النهائية_للصف_{$cId}_لمدرسة_{$sId}_للعام_({$aId})_". now()->format('Y-m-d') . '.xlsx';
+        $fileName = "النتائج_النهائية_للصف_{$cId}_لمدرسة_{$sId}_للعام_({$aId})_" . now()->format('Y-m-d') . '.xlsx';
 
         return Excel::download(
-            new FinalResultExport($schoolId, $classId, $academicYearId), 
+            new FinalResultExport($schoolId, $classId, $academicYearId),
             $fileName
         );
     }
@@ -49,12 +49,11 @@ class FinalResultExportController extends Controller
 
         return Excel::download(
             new StudentDataExport(
-                $request->school_id, 
-                $request->class_id, 
+                $request->school_id,
+                $request->class_id,
                 $request->academic_year_id
-            ), 
+            ),
             $fileName
         );
     }
-
 }

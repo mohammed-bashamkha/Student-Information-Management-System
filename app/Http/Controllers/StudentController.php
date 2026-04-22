@@ -143,7 +143,7 @@ class StudentController extends Controller
 
         foreach ($fieldsToTrack as $field) 
         {
-            if ($request->has($field) && $request->input($field) != $student->$field) {
+            if ($request->has($field) && $request->input($field) != $student->$field && $request->input($field) != null) {
                 Error::create([
                     'student_id'       => $student->id,
                     'field_name'       => $field,                    // اسم الحقل (مثلاً: full_name)
