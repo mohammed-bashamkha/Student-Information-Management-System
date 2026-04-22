@@ -17,3 +17,19 @@ Schedule::job(SuspendExpiredAdmissionsJob::class)
     ->onFailure(function () {
         Log::error('[Scheduler] فشل تشغيل SuspendExpiredAdmissionsJob');
     });
+
+Schedule::command('backup:clean')
+    ->dailyAt('08:00')
+    ->name('backup-clean')
+    ->withoutOverlapping()
+    ->onFailure(function () {
+        Log::error('[Scheduler] فشل تشغيل أمر التنظيف للنسخ الاحتياطي');
+    });
+
+Schedule::command('backup:run')
+    ->dailyAt('08:30')
+    ->name('backup-run')
+    ->withoutOverlapping()
+    ->onFailure(function () {
+        Log::error('[Scheduler] فشل تشغيل أمر النسخ الاحتياطي');
+    });
