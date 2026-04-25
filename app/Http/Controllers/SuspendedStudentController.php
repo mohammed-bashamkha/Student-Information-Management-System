@@ -7,6 +7,7 @@ use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -125,6 +126,12 @@ class SuspendedStudentController extends Controller
         });
 
         $enrollment->load(['student', 'school', 'schoolClass', 'academicYear']);
+
+        activity('students')
+            ->causedBy(Auth::user())
+            ->performedOn($enrollment->student)
+            ->event('restore')
+            ->log('تم استعادة الطالب الموقوف: ' . $enrollment->student->full_name . ' إلى مدرسته الأصلية');
 
         return response()->json([
             'message' => 'تم استعادة الطالب بنجاح وإعادته لمدرسته الأصلية.',

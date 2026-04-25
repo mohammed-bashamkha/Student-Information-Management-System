@@ -104,6 +104,12 @@ class TransferAdmissionController extends Controller
             ? 'تم تسجيل طلب النقل وتمت الموافقة عليه مباشرةً'
             : 'تم تسجيل طلب النقل بنجاح وهو الآن قيد الانتظار';
 
+        activity('transfers')
+            ->causedBy(Auth::user())
+            ->performedOn($transfer)
+            ->event('create')
+            ->log('تم إنشاء طلب نقل للطالب: ' . $student->full_name);
+
         return response()->json([
             'message' => $message,
             'data'    => $transfer->load(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
@@ -166,6 +172,12 @@ class TransferAdmissionController extends Controller
             ? 'تم تسجيل طلب القبول المؤقت وتمت الموافقة عليه مباشرةً'
             : 'تم تسجيل طلب القبول المؤقت بنجاح وهو الآن قيد الانتظار';
 
+        activity('admissions')
+            ->causedBy(Auth::user())
+            ->performedOn($admission)
+            ->event('create')
+            ->log('تم إنشاء طلب قبول مؤقت للطالب: ' . $student->full_name);
+
         return response()->json([
             'message' => $message,
             'data'    => $admission->load(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
@@ -215,6 +227,12 @@ class TransferAdmissionController extends Controller
             'pending'  => 'تم إعادة فتح الطلب وهو الآن قيد الانتظار',
         ];
 
+        activity('transfers')
+            ->causedBy(Auth::user())
+            ->performedOn($transferAdmission)
+            ->event($newStatus)
+            ->log("تغيير حالة الطلب من '{$currentStatus}' إلى '{$newStatus}'");
+
         return response()->json([
             'message' => $statusMessages[$newStatus],
             'data'    => $transferAdmission->fresh(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear'])
@@ -237,6 +255,12 @@ class TransferAdmissionController extends Controller
         }
 
         $transfer->delete();
+
+        activity('transfers')
+            ->causedBy(Auth::user())
+            ->event('delete')
+            ->log('تم حذف طلب ' . ($transfer->type === 'transfer' ? 'نقل' : 'قبول مؤقت'));
+
         return response()->json(['message' => 'تم حذف الطلب بنجاح'], 200);
     }
 
