@@ -15,18 +15,22 @@ use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Events\AfterImport;
 use Maatwebsite\Excel\Events\BeforeImport;
 
 /**
  * نسخة محسّنة لاستيراد النتائج النهائية مع معالجة أخطاء أفضل وتقارير مفصلة
  */
-class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvents
+class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvents, WithChunkReading
 {
     protected $academicYearId;
     protected $classId;
     protected $schoolId;
     protected $userId;
+
+    public $preview = false;
+    public $previewData = [];
 
     private $subjectsCache = [];
 
@@ -56,6 +60,11 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         return 13;
     }
 
+    public function chunkSize(): int
+    {
+        return 500;
+    }
+
     public function collection(Collection $rows)
     {
         // التحقق من وجود المواد قبل البدء
@@ -64,14 +73,33 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             throw new \Exception("لا توجد مواد مسجلة لهذا الصف. الرجاء التأكد من تسجيل المواد أولاً.");
         }
 
-        $this->stats['total_rows'] = $rows->count();
+        $this->stats['total_rows'] += $rows->count();
 
-        DB::transaction(function () use ($rows, $subjects) {
+        // استخراج جميع الأرقام المدرسية
+        $schoolNumbers = $rows->map(function ($row) {
+            return $this->sanitizeValue($row[1] ?? null);
+        })->filter()->unique()->toArray();
+
+        // تحميل الطلاب دفعة واحدة مع علاقاتهم
+        $existingStudents = Student::with(['enrollments' => function ($q) {
+            $q->where('academic_year_id', $this->academicYearId);
+        }, 'transfers' => function ($q) {
+            $q->where('status', 'active');
+        }])
+            ->whereIn('school_number', $schoolNumbers)
+            ->get()
+            ->keyBy('school_number');
+
+        DB::transaction(function () use ($rows, $subjects, &$existingStudents) {
+            $gradesToUpsert = [];
+            $finalResultsToUpsert = [];
+            $studentsToCalculate = [];
+
             foreach ($rows as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + $this->startRow();
 
                 try {
-                    $this->processRow($row, $subjects, $actualRowNumber);
+                    $this->processRowAndCollect($row, $subjects, $actualRowNumber, $existingStudents, $gradesToUpsert, $finalResultsToUpsert, $studentsToCalculate);
                     $this->stats['successful']++;
                 } catch (\Exception $e) {
                     $this->stats['failed']++;
@@ -84,20 +112,46 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                         ]
                     ];
 
-                    // تسجيل الخطأ
                     Log::error("خطأ في استيراد النتائج - الصف {$actualRowNumber}", [
                         'error' => $e->getMessage(),
                         'row_data' => $row->toArray()
                     ]);
                 }
             }
+
+            // تنفيذ عمليات الإدراج أو التحديث المجمعة Bulk Upsert
+            if (!$this->preview) {
+                if (!empty($gradesToUpsert)) {
+                    Grade::upsert(
+                        $gradesToUpsert,
+                        ['student_id', 'subject_id', 'academic_year_id'],
+                        ['school_id', 'class_id', 'first_semester_total', 'second_semester_total', 'total', 'updated_at', 'created_by']
+                    );
+                }
+
+                if (!empty($finalResultsToUpsert)) {
+                    FinalResult::upsert(
+                        $finalResultsToUpsert,
+                        ['student_id', 'academic_year_id'],
+                        ['total_student_grades', 'average_grade', 'final_result', 'notes', 'updated_at', 'created_by']
+                    );
+                }
+
+                // تحديث النتائج التلقائية بعد إدراج كل الدرجات
+                if (!empty($studentsToCalculate)) {
+                    $calcService = new ResultCalculationService();
+                    foreach ($studentsToCalculate as $studentId) {
+                        $calcService->calculateFinalResult($studentId, $this->academicYearId, $this->userId);
+                    }
+                }
+            }
         });
     }
 
     /**
-     * معالجة صف واحد من البيانات
+     * معالجة صف واحد من البيانات وجمع البيانات للإدراج المجمع
      */
-    private function processRow(Collection $row, Collection $subjects, int $rowNumber)
+    private function processRowAndCollect(Collection $row, Collection $subjects, int $rowNumber, &$existingStudents, array &$gradesToUpsert, array &$finalResultsToUpsert, array &$studentsToCalculate)
     {
         // استخراج البيانات الأساسية
         $studentNumber = $this->sanitizeValue($row[1] ?? null);
@@ -106,22 +160,88 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         // التحقق من البيانات الأساسية
         $this->validateStudentData($studentNumber, $studentName, $rowNumber);
 
-        // التحقق المسبق: هل الطالب موقوف قبل البحث/الإنشاء؟
-        $existingForCheck = Student::where('school_number', $studentNumber)->first();
-        if ($existingForCheck && $existingForCheck->isSuspended()) {
-            $this->stats['skipped']++;
-            $this->stats['warnings'][] = "الطالب [{$studentName}] (رقم: {$studentNumber}) في الصف {$rowNumber} موقوف - تم تخطيه.";
-            return;
+        // التحقق المسبق: هل الطالب موقوف أو محول
+        $existingForCheck = $existingStudents->get($studentNumber);
+        if ($existingForCheck) {
+            $isSuspended = $existingForCheck->enrollments->where('status', 'suspended')->isNotEmpty();
+            if ($isSuspended) {
+                $this->stats['skipped']++;
+                $this->stats['warnings'][] = "الطالب [{$studentName}] (رقم: {$studentNumber}) في الصف {$rowNumber} موقوف - تم تخطيه.";
+                return;
+            }
+
+            $activeTransfer = $existingForCheck->transfers->first();
+            if ($activeTransfer && $activeTransfer->to_school_id != $this->schoolId) {
+                $this->stats['skipped']++;
+                $typeLabel = $activeTransfer->type === 'transfer' ? 'تحويل' : 'قبول مؤقت';
+                $this->stats['warnings'][] = "الطالب [{$studentName}] (رقم: {$studentNumber}) في الصف {$rowNumber} يمتلك {$typeLabel} مفعل في مدرسة أخرى - تم تخطيه.";
+                return;
+            }
         }
 
-        // البحث عن الطالب أو إنشاؤه
-        $student = $this->findOrCreateStudent($studentNumber, $studentName);
+        // إنشاء أو تحديث الطالب
+        if ($existingForCheck) {
+            if (!$this->preview) {
+                $existingForCheck->update([
+                    'full_name'  => $studentName,
+                ]);
+            }
+            $studentId = $existingForCheck->id;
+            $this->stats['students_updated']++;
+        } else {
+            if (!$this->preview) {
+                $newStudent = Student::create([
+                    'school_number' => $studentNumber,
+                    'full_name'  => $studentName,
+                    'created_by' => $this->userId,
+                ]);
+                $studentId = $newStudent->id;
+            } else {
+                $newStudent = new Student(['school_number' => $studentNumber, 'full_name' => $studentName]);
+                $newStudent->id = rand(1000000, 9999999);
+                $studentId = $newStudent->id;
+            }
+            $this->stats['students_created']++;
+            $existingStudents->put($studentNumber, $newStudent);
+        }
+
+        // تسجيل الطالب (Enrollment)
+        if (!$this->preview) {
+            $enrollment = StudentEnrollment::updateOrCreate(
+                [
+                    'student_id'       => $studentId,
+                    'academic_year_id' => $this->academicYearId,
+                ],
+                [
+                    'school_id'  => $this->schoolId,
+                    'class_id'   => $this->classId,
+                    'created_by' => $this->userId,
+                ]
+            );
+
+            if ($enrollment->wasRecentlyCreated) {
+                $this->stats['enrollments_created']++;
+            }
+        } else {
+            $hasEnrollment = $existingForCheck ? $existingForCheck->enrollments->where('academic_year_id', $this->academicYearId)->isNotEmpty() : false;
+            if (!$hasEnrollment) {
+                $this->stats['enrollments_created']++;
+            }
+        }
 
         // معالجة درجات المواد
-        $this->processSubjectGrades($student, $subjects, $row, $rowNumber);
+        $this->collectSubjectGrades($studentId, $studentName, $subjects, $row, $rowNumber, $gradesToUpsert);
 
         // معالجة النتيجة النهائية
-        $this->processFinalResult($student, $subjects, $row, $rowNumber);
+        $this->collectFinalResult($studentId, $subjects, $row, $rowNumber, $finalResultsToUpsert, $studentsToCalculate);
+
+        if ($this->preview && count($this->previewData) < 5) {
+            $this->previewData[] = [
+                'student_number' => $studentNumber,
+                'student_name' => $studentName,
+                'status' => $existingForCheck ? 'تحديث نتائج' : 'طالب جديد'
+            ];
+        }
     }
 
     /**
@@ -144,51 +264,9 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     }
 
     /**
-     * البحث عن الطالب أو إنشاؤه
+     * تجميع درجات المواد للإدراج المجمع
      */
-    private function findOrCreateStudent(string $studentNumber, string $studentName): Student
-    {
-        $existingStudent = Student::where('school_number', $studentNumber)->first();
-        $isNew = !$existingStudent;
-
-        $student = Student::updateOrCreate(
-            ['school_number' => $studentNumber],
-            [
-                'full_name'  => $studentName,
-                'created_by' => $this->userId,
-            ]
-        );
-
-        if ($isNew) {
-            $this->stats['students_created']++;
-        } else {
-            $this->stats['students_updated']++;
-        }
-
-        // إنشاء أو تحديث سجل التسجيل في الصف والسنة الدراسية
-        $enrollment = StudentEnrollment::updateOrCreate(
-            [
-                'student_id'       => $student->id,
-                'academic_year_id' => $this->academicYearId,
-            ],
-            [
-                'school_id'  => $this->schoolId,
-                'class_id'   => $this->classId,
-                'created_by' => $this->userId,
-            ]
-        );
-
-        if ($enrollment->wasRecentlyCreated) {
-            $this->stats['enrollments_created']++;
-        }
-
-        return $student;
-    }
-
-    /**
-     * معالجة درجات المواد
-     */
-    private function processSubjectGrades(Student $student, Collection $subjects, Collection $row, int $rowNumber)
+    private function collectSubjectGrades(int $studentId, string $studentName, Collection $subjects, Collection $row, int $rowNumber, array &$gradesToUpsert)
     {
         $subjectGradesStartIndex = 3;
 
@@ -210,7 +288,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                     $this->stats['warnings'][] = sprintf(
                         "تحذير: مجموع درجات المادة '%s' للطالب '%s' في الصف %d غير متطابق (محسوب: %.1f، مسجل: %.1f)",
                         $subject->name,
-                        $student->full_name,
+                        $studentName,
                         $rowNumber,
                         $calculatedTotal,
                         $totalGrade
@@ -219,54 +297,49 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             }
 
             if ($firstSemesterGrade !== null || $secondSemesterGrade !== null || $totalGrade !== null) {
-                Grade::updateOrCreate(
-                    [
-                        'student_id' => $student->id,
-                        'subject_id' => $subject->id,
-                        'academic_year_id' => $this->academicYearId,
-                        'school_id' => $this->schoolId,
-                        'class_id' => $this->classId,
-                    ],
-                    [
-                        'first_semester_total' => $firstSemesterGrade,
-                        'second_semester_total' => $secondSemesterGrade,
-                        'total' => $totalGrade,
-                        'created_by' => $this->userId
-                    ]
-                );
+                $gradesToUpsert[] = [
+                    'student_id'            => $studentId,
+                    'subject_id'            => $subject->id,
+                    'academic_year_id'      => $this->academicYearId,
+                    'school_id'             => $this->schoolId,
+                    'class_id'              => $this->classId,
+                    'first_semester_total'  => $firstSemesterGrade,
+                    'second_semester_total' => $secondSemesterGrade,
+                    'total'                 => $totalGrade,
+                    'created_by'            => $this->userId,
+                    'created_at'            => now()->toDateTimeString(),
+                    'updated_at'            => now()->toDateTimeString(),
+                ];
             }
         }
     }
 
     /**
-     * معالجة النتيجة النهائية
+     * تجميع النتيجة النهائية للإدراج المجمع
      */
-    private function processFinalResult(Student $student, Collection $subjects, Collection $row, int $rowNumber)
+    private function collectFinalResult(int $studentId, Collection $subjects, Collection $row, int $rowNumber, array &$finalResultsToUpsert, array &$studentsToCalculate)
     {
         $finalResultStartIndex = 3 + (count($subjects) * 3);
 
-        $totalStudentGrades = $this->parseGrade($row[$finalResultStartIndex] ?? null) ?? 0;
+        $totalStudentGrades = $this->parseGrade($row[$finalResultStartIndex] ?? null);
         $gpa = $this->sanitizeValue($row[$finalResultStartIndex + 1] ?? null);
         $finalResult = $this->sanitizeValue($row[$finalResultStartIndex + 2] ?? null);
         $notes = $this->sanitizeValue($row[$finalResultStartIndex + 3] ?? null);
 
         if ($totalStudentGrades === null || $gpa === null || $finalResult === null) {
-            $calcService = new ResultCalculationService();
-            $calcService->calculateFinalResult($student->id, $this->academicYearId, $this->userId);
+            $studentsToCalculate[] = $studentId;
         } else {
-            FinalResult::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'academic_year_id' => $this->academicYearId
-                ],
-                [
-                    'total_student_grades' => $totalStudentGrades,
-                    'average_grade' => $gpa,
-                    'final_result' => $finalResult,
-                    'notes' => $notes,
-                    'created_by' => $this->userId
-                ]
-            );
+            $finalResultsToUpsert[] = [
+                'student_id'           => $studentId,
+                'academic_year_id'     => $this->academicYearId,
+                'total_student_grades' => $totalStudentGrades,
+                'average_grade'        => $gpa,
+                'final_result'         => $finalResult,
+                'notes'                => $notes,
+                'created_by'           => $this->userId,
+                'created_at'           => now()->toDateTimeString(),
+                'updated_at'           => now()->toDateTimeString(),
+            ];
         }
     }
 

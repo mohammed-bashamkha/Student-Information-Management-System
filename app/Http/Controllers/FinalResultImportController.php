@@ -25,10 +25,22 @@ class FinalResultImportController extends Controller
                 $request->school_id
             );
 
+            if ($request->boolean('preview')) {
+                $import->preview = true;
+            }
+
             Excel::import($import, $request->file('file'));
 
             // الحصول على تقرير الاستيراد
             $report = $import->getImportReport();
+
+            if ($request->boolean('preview')) {
+                return response()->json([
+                    'status' => 'preview',
+                    'report' => $report,
+                    'sample_data' => $import->previewData,
+                ]);
+            }
 
             // التحقق من وجود أخطاء
             if ($report['summary']['failed'] > 0) {
@@ -40,7 +52,6 @@ class FinalResultImportController extends Controller
             return redirect()->back()
                 ->with('success', 'تم استيراد النتائج النهائية بنجاح')
                 ->with('import_report', $report);
-                
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء الاستيراد: ' . $e->getMessage())
@@ -58,7 +69,7 @@ class FinalResultImportController extends Controller
         }
 
         $report = $request->session()->get('import_report');
-        
+
         return response()->json($report, 200, [
             'Content-Type' => 'application/json',
             'Content-Disposition' => 'attachment; filename="import-report-' . date('Y-m-d-H-i-s') . '.json"'

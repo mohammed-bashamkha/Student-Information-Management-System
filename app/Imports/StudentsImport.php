@@ -11,13 +11,16 @@ use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Events\AfterImport;
 use Maatwebsite\Excel\Events\BeforeImport;
 use Carbon\Carbon;
 
-class StudentsImport implements ToCollection, WithStartRow, WithEvents
+class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChunkReading
 {
     protected $schoolId, $classId, $academicYearId, $userId;
+    public $preview = false;
+    public $previewData = [];
 
     public $stats = [
         'total_rows'       => 0,
@@ -46,11 +49,31 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         return 12;
     }
 
+    public function chunkSize(): int
+    {
+        return 500;
+    }
+
     public function collection(Collection $rows)
     {
-        $this->stats['total_rows'] = $rows->count();
+        $this->stats['total_rows'] += $rows->count();
 
-        DB::transaction(function () use ($rows) {
+        // 1. استخراج الأرقام المدرسية في هذا الـ Chunk
+        $schoolNumbers = $rows->map(function ($row) {
+            return $this->sanitizeValue($row[1]);
+        })->filter()->unique()->toArray();
+
+        // 2. تحميل الطلاب الموجودين مسبقاً دفعة واحدة
+        $existingStudents = Student::with(['enrollments' => function ($q) {
+            $q->where('academic_year_id', $this->academicYearId);
+        }, 'transfers' => function ($q) {
+            $q->where('status', 'active');
+        }])
+            ->whereIn('school_number', $schoolNumbers)
+            ->get()
+            ->keyBy('school_number');
+
+        DB::transaction(function () use ($rows, &$existingStudents) {
             foreach ($rows as $rowIndex => $row) {
                 $actualRowNumber = $rowIndex + $this->startRow();
 
@@ -58,7 +81,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
                     // تخطي الصفوف إذا كان الرقم المدرسي والاسم فارغين
                     if (empty($row[1]) && empty($row[2])) continue;
 
-                    $processed = $this->processRow($row, $actualRowNumber);
+                    $processed = $this->processRow($row, $actualRowNumber, $existingStudents);
                     if ($processed) {
                         $this->stats['successful']++;
                     }
@@ -76,7 +99,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         });
     }
 
-    private function processRow(Collection $row, int $rowNumber): bool
+    private function processRow(Collection $row, int $rowNumber, &$existingStudents): bool
     {
         /**
          * ترتيب الأعمدة بناءً على التصدير الأخير (9 أعمدة):
@@ -106,17 +129,26 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         if (!$schoolNumber) throw new \Exception("الرقم المدرسي مفقود.");
         if (!$fullName) throw new \Exception("اسم الطالب مفقود.");
 
-        // 2b. تخطي الطالب إذا كان موقوفاً في هذه السنة الدراسية تحديداً
-        $existingForCheck = Student::where('school_number', $schoolNumber)->first();
+        // 2b. تخطي الطالب إذا كان موقوفاً أو لديه تحويل باستخدام البيانات المحملة مسبقاً
+        $existingForCheck = $existingStudents->get($schoolNumber);
         if ($existingForCheck) {
-            $isSuspendedInThisYear = $existingForCheck->enrollments()
-                ->where('academic_year_id', $this->academicYearId)
+            $isSuspendedInThisYear = $existingForCheck->enrollments
                 ->where('status', 'suspended')
-                ->exists();
+                ->isNotEmpty();
 
             if ($isSuspendedInThisYear) {
                 $this->stats['skipped']++;
                 $this->stats['warnings'][] = "الطالب [{$fullName}] (رقم: {$schoolNumber}) موقوف - تم تخطيه.";
+                return false;
+            }
+
+            // 2c. تخطي الطالب إذا كان لديه تحويل أو قبول مؤقت مفعل في مدرسة أخرى
+            $activeTransfer = $existingForCheck->transfers->first();
+
+            if ($activeTransfer && $activeTransfer->to_school_id != $this->schoolId) {
+                $this->stats['skipped']++;
+                $typeLabel = $activeTransfer->type === 'transfer' ? 'تحويل' : 'قبول مؤقت';
+                $this->stats['warnings'][] = "الطالب [{$fullName}] (رقم: {$schoolNumber}) يمتلك {$typeLabel} مفعل في مدرسة أخرى - تم تخطيه.";
                 return false;
             }
         }
@@ -129,51 +161,68 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents
         $gender = $this->mapGender($genderText, $rowNumber);
 
         // 3. إنشاء أو تحديث بيانات الطالب الأساسية
-        $existingStudent = Student::where('school_number', $schoolNumber)->first();
-        $isNew = !$existingStudent;
+        if ($existingForCheck) {
+            if (!$this->preview) {
+                $existingForCheck->update([
+                    'full_name'         => $fullName,
+                    'seat_number'       => $seatNumber,
+                    'nationality'       => $nationality,
+                    'gender'            => $gender,
+                    'date_of_birth'     => $this->transformDate($dob),
+                    'registration_date' => $this->transformDate($regDate) ?? now(),
+                ]);
+            }
 
-        $student = Student::firstOrCreate(
-            ['school_number' => $schoolNumber],
-            [
-                'full_name'         => $fullName,
-                'seat_number'       => $seatNumber,
-                'nationality'       => $nationality,
-                'gender'            => $gender,
-                'date_of_birth'     => $this->transformDate($dob),
-                'registration_date' => $this->transformDate($regDate) ?? now(),
-                'updated_at'        => now(),
-                'created_by'        => $this->userId,
-            ]
-        );
-
-        if (!$student->wasRecentlyCreated) {
-            $student->update([
-                'full_name'         => $fullName,
-                'seat_number'       => $seatNumber,
-                'nationality'       => $nationality,
-                'gender'            => $gender,
-                'date_of_birth'     => $this->transformDate($dob),
-                'registration_date' => $this->transformDate($regDate) ?? now(),
-            ]);
-
+            $studentId = $existingForCheck->id;
             $this->stats['students_updated']++;
         } else {
+            if (!$this->preview) {
+                $newStudent = Student::create([
+                    'school_number'     => $schoolNumber,
+                    'full_name'         => $fullName,
+                    'seat_number'       => $seatNumber,
+                    'nationality'       => $nationality,
+                    'gender'            => $gender,
+                    'date_of_birth'     => $this->transformDate($dob),
+                    'registration_date' => $this->transformDate($regDate) ?? now(),
+                    'created_by'        => $this->userId,
+                ]);
+                $studentId = $newStudent->id;
+            } else {
+                $newStudent = new Student(['school_number' => $schoolNumber, 'full_name' => $fullName]);
+                $newStudent->id = rand(1000000, 9999999);
+                $studentId = $newStudent->id;
+            }
+
             $this->stats['students_created']++;
+
+            // إضافة الطالب الجديد للاستعلامات اللاحقة في نفس الـ Chunk
+            $existingStudents->put($schoolNumber, $newStudent);
         }
 
         // 4. ربط الطالب بالسنة والدراسة (Enrollment)
-        // يتم التحديث أو الإنشاء بناءً على الطالب والسنة الدراسية
-        StudentEnrollment::updateOrCreate(
-            [
-                'student_id'       => $student->id,
-                'academic_year_id' => $this->academicYearId,
-            ],
-            [
-                'school_id'  => $this->schoolId,
-                'class_id'   => $this->classId,
-                'created_by' => $this->userId,
-            ]
-        );
+        if (!$this->preview) {
+            StudentEnrollment::updateOrCreate(
+                [
+                    'student_id'       => $studentId,
+                    'academic_year_id' => $this->academicYearId,
+                ],
+                [
+                    'school_id'  => $this->schoolId,
+                    'class_id'   => $this->classId,
+                    'created_by' => $this->userId,
+                ]
+            );
+        }
+
+        if ($this->preview && count($this->previewData) < 5) {
+            $this->previewData[] = [
+                'school_number' => $schoolNumber,
+                'full_name'     => $fullName,
+                'nationality'   => $nationality,
+                'status'        => $existingForCheck ? 'تحديث' : 'طالب جديد'
+            ];
+        }
 
         return true;
     }

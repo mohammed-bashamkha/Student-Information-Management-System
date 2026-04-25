@@ -13,9 +13,12 @@
         "kahil-raghed/laravel-excel-extended": "*",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
+        "laravel/slack-notification-channel": "^3.8",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
         "spatie/browsershot": "^5.2",
+        "spatie/laravel-activitylog": "^5.0",
+        "spatie/laravel-backup": "^10.2",
         "spatie/laravel-pdf": "^2.5",
         "spatie/laravel-permission": "^7.2"
     },

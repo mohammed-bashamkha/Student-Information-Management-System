@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificateReplacementController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\RoleController;
@@ -73,6 +74,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // ===== Suspended Students (انتهاء القبول المؤقت) =====
     Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
     Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

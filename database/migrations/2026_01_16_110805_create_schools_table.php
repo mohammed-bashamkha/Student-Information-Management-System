@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('created_by')->constrained('users');
             $table->string('name');
-            $table->enum('school_type',['public','private'])->default('public');
+            $table->enum('school_type', ['public', 'private'])->default('public');
+            $table->integer('capacity')->default(500);
             $table->string('address')->nullable();
             $table->timestamps();
         });
