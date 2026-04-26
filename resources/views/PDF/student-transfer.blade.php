@@ -249,7 +249,7 @@
                 <tr>
                     <td>{{ $student->full_name ?? '' }}</td>
                     <td>{{ $schoolClass->name ?? '' }}</td>
-                    <td>{{ $fromSchool->name ?? '' }}</td>
+                    <td>{{ $fromSchool->name ?? $transfer->from_external_school_name ?? '' }}</td>
                     <td>المحصلات الدراسية</td>
                 </tr>
                 <tr>

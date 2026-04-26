@@ -63,6 +63,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         ->middleware(['student.not_suspended']);
     Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission'])
         ->middleware(['student.not_suspended']);
+    Route::post('/register-student-out-region', [TransferAdmissionController::class, 'registerStudentOutRegion'])
+        ->middleware(['student.not_suspended']);
 
     // ===== PDF Export Routes =====
     Route::prefix('pdf')->group(function () {

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TransfersAdmissionRequest\RegisterStudentWithTransferRequest;
 use App\Http\Requests\TransfersAdmissionRequest\StoreAdmissionRequest;
 use App\Http\Requests\TransfersAdmissionRequest\StoreTransferRequest;
 use App\Http\Requests\TransfersAdmissionRequest\UpdateTransfersAdmissionRequest;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
+use App\Services\RegisterStudentOutRegionService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -17,6 +19,11 @@ use Illuminate\Support\Facades\DB;
 class TransferAdmissionController extends Controller
 {
     use AuthorizesRequests;
+    protected $registerStudentOutRegionService;
+    public function __construct(RegisterStudentOutRegionService $registerStudentOutRegionService)
+    {
+        $this->registerStudentOutRegionService = $registerStudentOutRegionService;
+    }
     public function index(Request $request)
     {
         $this->authorize('viewAny', TransfersAdmission::class);
@@ -289,5 +296,17 @@ class TransferAdmissionController extends Controller
                 'created_by'       => Auth::id(),
             ]);
         }
+    }
+
+    public function registerStudentOutRegion(RegisterStudentWithTransferRequest $request)
+    {
+        $data = $request->validated();
+
+        $result = $this->registerStudentOutRegionService->registerStudentWithTransfer($data);
+
+        return response()->json([
+            'message' => 'تم تسجيل الطالب بنجاح',
+            'data' => $result,
+        ], 201);
     }
 }
