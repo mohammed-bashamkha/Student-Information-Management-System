@@ -131,7 +131,6 @@ class TransferAdmissionController extends Controller
 
         $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
 
-        // التأكد من عدم وجود طلب قبول مؤقت مكرر
         $existingRequest = TransfersAdmission::where('student_id', $student->id)
             ->where('type', 'admission')
             ->where('academic_year_id', $student->currentEnrollment->academic_year_id)
@@ -167,7 +166,6 @@ class TransferAdmissionController extends Controller
                 'created_by'       => Auth::id(),
             ]);
 
-            // إذا تمت الموافقة مباشرةً عند الإنشاء
             if ($status === 'approved') {
                 $this->applyEnrollment($admission);
             }
@@ -213,7 +211,6 @@ class TransferAdmissionController extends Controller
             ], 422);
         }
 
-        // ===== تنفيذ التحديث داخل Transaction =====
         DB::transaction(function () use ($transferAdmission, $data, $newStatus) {
 
             $transferAdmission->update([
@@ -222,7 +219,6 @@ class TransferAdmissionController extends Controller
                 'reason'        => $data['reason'] ?? $transferAdmission->reason,
             ]);
 
-            // عند القبول: تحديث أو إنشاء تسجيل الطالب في المدرسة الجديدة
             if ($newStatus === 'approved') {
                 $this->applyEnrollment($transferAdmission);
             }
