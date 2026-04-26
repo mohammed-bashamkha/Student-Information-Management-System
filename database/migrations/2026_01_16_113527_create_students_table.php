@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('nationality')->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->date('date_of_birth')->nullable();
+            $table->string('place_of_birth')->nullable();
             $table->date('registration_date')->nullable();
             $table->timestamps();
         });

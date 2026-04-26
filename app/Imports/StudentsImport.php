@@ -102,7 +102,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
     private function processRow(Collection $row, int $rowNumber, &$existingStudents): bool
     {
         /**
-         * ترتيب الأعمدة بناءً على التصدير الأخير (9 أعمدة):
+         * ترتيب الأعمدة بناءً على التصدير الأخير (10 أعمدة):
          * 0 => م (مسلسل)
          * 1 => الرقم المدرسي
          * 2 => الاسم الكامل
@@ -110,8 +110,9 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
          * 4 => الجنسية
          * 5 => الجنس (ذكر/أنثى)
          * 6 => تاريخ الميلاد
-         * 7 => تاريخ التسجيل
-         * 8 => تاريخ الإنشاء (يُهمل في الاستيراد)
+         * 7 => مكان الميلاد
+         * 8 => تاريخ التسجيل
+         * 9 => تاريخ الإنشاء (يُهمل في الاستيراد)
          */
 
         $schoolNumber   = $this->sanitizeValue($row[1]);
@@ -120,7 +121,8 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
         $nationality    = $this->sanitizeValue($row[4]) ?? 'يمني';
         $genderText     = $this->sanitizeValue($row[5]);
         $dob            = $row[6];
-        $regDate        = $row[7];
+        $placeOfBirth   = $this->sanitizeValue($row[7]);
+        $regDate        = $row[8];
 
         // 1. تنظيف الاسم من المسافات الزائدة
         $fullName = trim(preg_replace('/\s+/', ' ', $rawFullName ?? ''));
@@ -169,6 +171,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
                     'nationality'       => $nationality,
                     'gender'            => $gender,
                     'date_of_birth'     => $this->transformDate($dob),
+                    'place_of_birth'    => $placeOfBirth,
                     'registration_date' => $this->transformDate($regDate) ?? now(),
                 ]);
             }
@@ -184,6 +187,7 @@ class StudentsImport implements ToCollection, WithStartRow, WithEvents, WithChun
                     'nationality'       => $nationality,
                     'gender'            => $gender,
                     'date_of_birth'     => $this->transformDate($dob),
+                    'place_of_birth'    => $placeOfBirth,
                     'registration_date' => $this->transformDate($regDate) ?? now(),
                     'created_by'        => $this->userId,
                 ]);
