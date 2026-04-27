@@ -28,54 +28,59 @@ Route::get('/user', function (Request $request) {
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    /**
-     * @authenticated
-     */
-    // users routes
-    Route::apiResource('/users', UserController::class);
-    // roles routes
-    Route::apiResource('/roles', RoleController::class);
-    // academic year routes
-    Route::apiResource('/academic-year', AcademicYearController::class);
-    // schools routes
-    Route::apiResource('/schools', SchoolControlle::class);
-    // subjects routes
-    Route::apiResource('/subjects', SubjectController::class);
-    // school classes routes
-    Route::apiResource('/school-classes', SchoolClassController::class);
-    // grades routes — محمية: لا يمكن إضافة/تعديل درجة لطالب موقوف
-    Route::apiResource('/grades', GradeController::class)
-        ->middleware(['student.not_suspended']);
+    Route::group(['middleware' => ['must_change_password']], function () {
+        /**
+         * @authenticated
+         */
+        // users routes
+        Route::apiResource('/users', UserController::class);
+        // roles routes
+        Route::apiResource('/roles', RoleController::class);
+        // academic year routes
+        Route::apiResource('/academic-year', AcademicYearController::class);
+        // schools routes
+        Route::apiResource('/schools', SchoolControlle::class);
+        // subjects routes
+        Route::apiResource('/subjects', SubjectController::class);
+        // school classes routes
+        Route::apiResource('/school-classes', SchoolClassController::class);
+        // grades routes — محمية: لا يمكن إضافة/تعديل درجة لطالب موقوف
+        Route::apiResource('/grades', GradeController::class)
+            ->middleware(['student.not_suspended']);
 
-    // students route
-    Route::apiResource('/students', StudentController::class);
+        // students route
+        Route::apiResource('/students', StudentController::class);
 
-    // certificate replacements — محمية
-    Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
-        ->only(['store', 'update'])
-        ->middleware(['student.not_suspended']);
-    Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
-        ->except(['store', 'update']);
+        // certificate replacements — محمية
+        Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
+            ->only(['store', 'update'])
+            ->middleware(['student.not_suspended']);
+        Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
+            ->except(['store', 'update']);
 
-    // transfers admissions — محمية: store و update
-    Route::apiResource('/transfers-admissions', TransferAdmissionController::class)->except('store');
-    Route::post('/transfers', [TransferAdmissionController::class, 'storeTransfer'])
-        ->middleware(['student.not_suspended']);
-    Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission'])
-        ->middleware(['student.not_suspended']);
+        // transfers admissions — محمية: store و update
+        Route::apiResource('/transfers-admissions', TransferAdmissionController::class)->except('store');
+        Route::post('/transfers', [TransferAdmissionController::class, 'storeTransfer'])
+            ->middleware(['student.not_suspended']);
+        Route::post('/admissions', [TransferAdmissionController::class, 'storeAdmission'])
+            ->middleware(['student.not_suspended']);
+        Route::post('/register-student-out-region', [TransferAdmissionController::class, 'registerStudentOutRegion'])
+            ->middleware(['student.not_suspended']);
 
-    // ===== PDF Export Routes =====
-    Route::prefix('pdf')->group(function () {
-        Route::get('/certificate-replacement/{id}', [PdfExportController::class, 'certificateReplacement'])->name('pdf.certificate');
-        Route::get('/transfer/{id}',                [PdfExportController::class, 'transfer'])->name('pdf.transfer');
-        Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
-        Route::get('/final-result/{id}',            [PdfExportController::class, 'finalResult'])->name('pdf.finalResult');
+        // ===== PDF Export Routes =====
+        Route::prefix('pdf')->group(function () {
+            Route::get('/certificate-replacement/{id}', [PdfExportController::class, 'certificateReplacement'])->name('pdf.certificate');
+            Route::get('/transfer/{id}',                [PdfExportController::class, 'transfer'])->name('pdf.transfer');
+            Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
+            Route::get('/final-result/{id}',            [PdfExportController::class, 'finalResult'])->name('pdf.finalResult');
+        });
+        // ===== Suspended Students (انتهاء القبول المؤقت) =====
+        Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
+        Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
+
+        Route::get('/dashboard', [DashboardController::class, 'index']);
     });
-    // ===== Suspended Students (انتهاء القبول المؤقت) =====
-    Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
-    Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
 
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-
+    Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

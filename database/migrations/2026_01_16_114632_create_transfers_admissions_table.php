@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
             $table->enum('type', ['transfer', 'admission']);
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignId('from_school_id')->nullable()->constrained('schools')->cascadeOnDelete();
+            $table->foreignId('from_school_id')->nullable()->constrained('schools')->nullOnDelete();
+            $table->text('from_external_school_name')->nullable();
             $table->foreignId('to_school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
             $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();

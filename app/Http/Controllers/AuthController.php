@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\AuthServices\AuthService;
 
 class AuthController extends Controller
 {
+    protected $authService;
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
     public function login(Request $request)
     {
         $validate = $request->validate([
@@ -14,27 +19,40 @@ class AuthController extends Controller
             'password' => 'required|string'
         ]);
 
-        if(!Auth::attempt($validate))
-        {
+        $token = $this->authService->loginUser($validate);
+
+        if (!$token) {
             return response()->json([
                 'message' => 'بيانات الاعتماد غير صحيحة'
-            ],401);
+            ], 401);
         }
-
-        $token = Auth::user()->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'تم تسجيل الدخول بنجاح',
             'access_token' => $token,
             'token_type' => 'Bearer'
-        ],200);
+        ], 200);
     }
 
     public function logout()
     {
-        Auth::user()->currentAccessToken()->delete;
+        $this->authService->logoutUser();
         return response()->json([
             'message' => 'تم تسجيل الخروج بنجاح'
-        ],200);
+        ], 200);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validate = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed'
+        ]);
+
+        $this->authService->changePassword($validate);
+
+        return response()->json([
+            'message' => 'تم تغيير كلمة المرور بنجاح'
+        ], 200);
     }
 }

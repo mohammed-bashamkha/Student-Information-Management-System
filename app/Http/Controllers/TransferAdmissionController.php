@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TransfersAdmissionRequest\RegisterStudentWithTransferRequest;
 use App\Http\Requests\TransfersAdmissionRequest\StoreAdmissionRequest;
 use App\Http\Requests\TransfersAdmissionRequest\StoreTransferRequest;
 use App\Http\Requests\TransfersAdmissionRequest\UpdateTransfersAdmissionRequest;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\TransfersAdmission;
+use App\Services\RegisterStudentOutRegionService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -17,6 +19,11 @@ use Illuminate\Support\Facades\DB;
 class TransferAdmissionController extends Controller
 {
     use AuthorizesRequests;
+    protected $registerStudentOutRegionService;
+    public function __construct(RegisterStudentOutRegionService $registerStudentOutRegionService)
+    {
+        $this->registerStudentOutRegionService = $registerStudentOutRegionService;
+    }
     public function index(Request $request)
     {
         $this->authorize('viewAny', TransfersAdmission::class);
@@ -124,7 +131,6 @@ class TransferAdmissionController extends Controller
 
         $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
 
-        // التأكد من عدم وجود طلب قبول مؤقت مكرر
         $existingRequest = TransfersAdmission::where('student_id', $student->id)
             ->where('type', 'admission')
             ->where('academic_year_id', $student->currentEnrollment->academic_year_id)
@@ -160,7 +166,6 @@ class TransferAdmissionController extends Controller
                 'created_by'       => Auth::id(),
             ]);
 
-            // إذا تمت الموافقة مباشرةً عند الإنشاء
             if ($status === 'approved') {
                 $this->applyEnrollment($admission);
             }
@@ -206,7 +211,6 @@ class TransferAdmissionController extends Controller
             ], 422);
         }
 
-        // ===== تنفيذ التحديث داخل Transaction =====
         DB::transaction(function () use ($transferAdmission, $data, $newStatus) {
 
             $transferAdmission->update([
@@ -215,7 +219,6 @@ class TransferAdmissionController extends Controller
                 'reason'        => $data['reason'] ?? $transferAdmission->reason,
             ]);
 
-            // عند القبول: تحديث أو إنشاء تسجيل الطالب في المدرسة الجديدة
             if ($newStatus === 'approved') {
                 $this->applyEnrollment($transferAdmission);
             }
@@ -289,5 +292,17 @@ class TransferAdmissionController extends Controller
                 'created_by'       => Auth::id(),
             ]);
         }
+    }
+
+    public function registerStudentOutRegion(RegisterStudentWithTransferRequest $request)
+    {
+        $data = $request->validated();
+
+        $result = $this->registerStudentOutRegionService->registerStudentWithTransfer($data);
+
+        return response()->json([
+            'message' => 'تم تسجيل الطالب بنجاح',
+            'data' => $result,
+        ], 201);
     }
 }

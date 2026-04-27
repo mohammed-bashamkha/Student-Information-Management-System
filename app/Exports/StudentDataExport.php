@@ -82,7 +82,6 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function headings(): array
     {
-        // تم حذف عمود "المدرسة المسجل بها"
         return [
             'م',
             'الرقم المدرسي',
@@ -91,6 +90,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             'الجنسية',
             'الجنس',
             'تاريخ الميلاد',
+            'مكان الميلاد',
             'تاريخ التسجيل',
             'تاريخ الإنشاء',
         ];
@@ -110,6 +110,7 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             $student->nationality,
             $student->gender === 'male' ? 'ذكر' : ($student->gender === 'female' ? 'أنثى' : ''),
             $student->date_of_birth,
+            $student->place_of_birth,
             $student->registration_date,
             $student->created_at->format('Y-m-d'),
         ];
@@ -122,8 +123,8 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                // تم تعديل أعلى عمود إلى I بدلاً من J
-                $highestCol = 'I';
+                // تم تعديل أعلى عمود إلى J بدلاً من I نظراً لإضافة عامود مكان الميلاد
+                $highestCol = 'J';
                 $highestRow = $sheet->getHighestRow();
                 $count = $this->studentsCollection->count();
                 $firstStudent = $this->studentsCollection->first()->full_name ?? '---';
@@ -161,8 +162,9 @@ class StudentDataExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $sheet->getColumnDimension('C')->setWidth(35);
                 $sheet->getColumnDimension('D')->setWidth(15);
                 $sheet->getColumnDimension('G')->setWidth(15);
-                $sheet->getColumnDimension('H')->setWidth(15);
-                $sheet->getColumnDimension('I')->setWidth(20);
+                $sheet->getColumnDimension('H')->setWidth(20);
+                $sheet->getColumnDimension('I')->setWidth(15);
+                $sheet->getColumnDimension('J')->setWidth(20);
 
                 // --- 🎨 تنسيق رأس الجدول ---
                 $sheet->getStyle("A11:{$highestCol}11")->applyFromArray([

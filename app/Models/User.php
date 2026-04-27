@@ -24,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
     ];
 
     /**
@@ -46,34 +47,42 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 
-    public function schools() {
+    public function schools()
+    {
         return $this->hasMany(School::class, 'created_by');
     }
 
-    public function levels() {
+    public function levels()
+    {
         return $this->hasMany(Level::class, 'created_by');
     }
 
-    public function classes() {
+    public function classes()
+    {
         return $this->hasMany(SchoolClass::class, 'created_by');
     }
 
-    public function subjects() {
+    public function subjects()
+    {
         return $this->hasMany(Subject::class, 'created_by');
     }
 
-    public function students() {
+    public function students()
+    {
         return $this->hasMany(Student::class, 'created_by');
     }
 
-    public function grades() {
+    public function grades()
+    {
         return $this->hasMany(Grade::class, 'created_by');
     }
 
-    public function finalResults() {
+    public function finalResults()
+    {
         return $this->hasMany(FinalResult::class, 'created_by');
     }
 }

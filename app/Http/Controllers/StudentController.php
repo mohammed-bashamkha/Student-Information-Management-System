@@ -149,6 +149,7 @@ class StudentController extends Controller
                 'gender',
                 'school_id',
                 'class_id',
+                'place_of_birth',
                 'date_of_birth'
             ];
 
