@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 class AcademicYearController extends Controller
 {
     use AuthorizesRequests;
+    public function index()
+    {
+        $academicYears = AcademicYear::latest()->get();
+        return response()->json([
+            'data' => $academicYears
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('manageAcademicYear');
