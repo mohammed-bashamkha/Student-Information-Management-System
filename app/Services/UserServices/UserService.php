@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\StudentServices;
+namespace App\Services\UserServices;
 
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
-class StudentService
+class UserService
 {
     use AuthorizesRequests;
     public function getUsers()

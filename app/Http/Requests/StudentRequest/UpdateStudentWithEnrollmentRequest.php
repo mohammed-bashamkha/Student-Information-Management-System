@@ -3,6 +3,7 @@
 namespace App\Http\Requests\StudentRequest;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateStudentWithEnrollmentRequest extends FormRequest
 {
@@ -21,16 +22,21 @@ class UpdateStudentWithEnrollmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $studentId = $this->route('student');
+        
         return [
-        'nationality' => 'nullable|string',
-        'gender' => 'required|string|in:male,female',
-        'date_of_birth' => 'nullable|date',
-        'registration_date' => 'nullable|date',
-        'school_id' => 'required|exists:schools,id',
-        'place_of_birth' => 'nullable|string',
-        'class_id' => 'required|exists:school_classes,id',
-        'academic_year_id' => 'required|exists:academic_years,id',
-        'reason' => 'nullable|string|max:255',
+            'school_number' => ['required', 'integer', 'min_digits:3', Rule::unique('students', 'school_number')->ignore($studentId)],
+            'seat_number' => ['required', 'integer', 'min_digits:3', Rule::unique('students', 'seat_number')->ignore($studentId)],
+            'full_name' => ['required', 'string', 'regex:/^(\S+\s){3,}\S+$/', Rule::unique('students', 'full_name')->ignore($studentId)],
+            'nationality' => 'nullable|string|max:15',
+            'gender' => 'required|string|in:male,female',
+            'date_of_birth' => 'nullable|date',
+            'registration_date' => 'nullable|date',
+            'school_id' => 'required|exists:schools,id',
+            'place_of_birth' => 'nullable|string',
+            'class_id' => 'required|exists:school_classes,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'reason' => 'nullable|string|max:255',
         ];
     }
 }

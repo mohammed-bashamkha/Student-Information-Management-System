@@ -135,9 +135,6 @@ class StudentController extends Controller
         $this->authorize('update', $student);
 
         $data = $request->validated();
-        $data['school_number'] = ['required', 'integer', 'min_digits:3', Rule::unique('students', 'school_number')->ignore($student->id)];
-        $data['seat_number'] = ['required', 'integer', 'min_digits:3', Rule::unique('students', 'seat_number')->ignore($student->id)];
-        $data['full_name'] = ['required', 'string', Rule::unique('students', 'full_name')->ignore($student->id)];
 
         DB::transaction(function () use ($student, $request) {
 

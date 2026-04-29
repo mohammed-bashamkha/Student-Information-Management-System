@@ -3,27 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest\StoreUserRequest;
-use App\Services\StudentServices\StudentService;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Services\UserServices\UserService;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    protected $studentService;
-    public function __construct(StudentService $studentService)
+    protected $userService;
+    public function __construct(UserService $userService)
     {
-        $this->studentService = $studentService;
+        $this->userService = $userService;
     }
     public function index()
     {
-        $users = $this->studentService->getUsers();
+        $users = $this->userService->getUsers();
         return response()->json($users,200);
     }
 
     public function store(StoreUserRequest $request)
     {
         $validate = $request->validated();
-        $user = $this->studentService->createUser($validate);
+        $user = $this->userService->createUser($validate);
 
         return response()->json([
             'message' => 'تم إنشاء المستخدم بنجاح',
@@ -33,7 +32,7 @@ class UserController extends Controller
 
     public function show(string $id)
     {
-        $user = $this->studentService->getUserById($id);
+        $user = $this->userService->getUserById($id);
         return response()->json($user,200);
     }
 
@@ -46,7 +45,7 @@ class UserController extends Controller
         'roles' => 'array|nullable',
         'roles.*' => 'string|exists:roles,name'
         ]);
-        $user = $this->studentService->editUser($request, $validate, $id);
+        $user = $this->userService->editUser($request, $validate, $id);
         return response()->json([
             'message' => 'تم تعديل المستخدم بنجاح',
             'data' => $user
@@ -55,7 +54,7 @@ class UserController extends Controller
 
     public function destroy(string $id)
     {
-        $user = $this->studentService->deleteUser($id);
+        $user = $this->userService->deleteUser($id);
         return response()->json([
             'message' => 'تم حذف المستخدم بنجاح',
             'data' => $user->name
