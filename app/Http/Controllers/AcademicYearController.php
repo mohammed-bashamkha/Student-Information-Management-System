@@ -2,50 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicYear;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
+use App\Http\Requests\AcademicYearRequest\StoreAcademicYearRequest;
+use App\Http\Requests\AcademicYearRequest\UpdateAcademicYearRequest;
+use App\Services\AcademicYearServices\AcademicYearService;
 
 class AcademicYearController extends Controller
 {
-    use AuthorizesRequests;
+    protected $academicYearService;
+    public function __construct(AcademicYearService $academicYearService)
+    {
+        $this->academicYearService = $academicYearService;
+    }
     public function index()
     {
-        $academicYears = AcademicYear::latest()->get();
+        $academicYears = $this->academicYearService->getAcademicYears();
         return response()->json([
             'data' => $academicYears
         ], 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreAcademicYearRequest $request)
     {
-        $this->authorize('manageAcademicYear');
-        $data = $request->validate([
-            'year' => "required|string|max:9|unique:academic_years,year",
-            'start_date' => "required|string|date",
-            'end_date' => "required|string|date",
-            'status' => "nullable|boolean"
-        ]);
-
-        $academicYear = AcademicYear::create($data);
+        $validateData = $request->validated();
+        $academicYear = $this->academicYearService->createAcademicYear($validateData);
         return response()->json([
             'message' => 'تم اضافة السنة الدراسية بنجاح',
             'data' => $academicYear
         ], 201);
     }
 
-    public function update(Request $request,string $id)
+    public function update(UpdateAcademicYearRequest $request, string $id)
     {
-        $this->authorize('manageAcademicYear');
-        $academicYear = AcademicYear::findOrFail($id);
-        $data = $request->validate([
-            'year' => "sometimes|string|max:9|unique:academic_years,year,$id",
-            'start_date' => "sometimes|date",
-            'end_date' => "sometimes|date",
-            'status' => "nullable|boolean"
-        ]);
-
-        $academicYear->update($data);
+        $validateData = $request->validated();
+        $academicYear = $this->academicYearService->updateAcademicYear($validateData, $id);
         return response()->json([
             'message' => 'تم تعديل السنة الدراسية بنجاح',
             'data' => $academicYear
@@ -54,12 +43,10 @@ class AcademicYearController extends Controller
 
     public function destroy(string $id)
     {
-        $this->authorize('manageAcademicYear');
-        $academicYear = AcademicYear::findOrFail($id);
-        $academicYear->delete();
+        $academicYear = $this->academicYearService->deleteAcademicYear($id);
         return response()->json([
             'message' => 'تم حدف السنة الدراسية بنجاح',
-            'data' => $academicYear->year
+            'data' => $academicYear
         ], 200);
     }
 }
