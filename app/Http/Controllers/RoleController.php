@@ -2,89 +2,55 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Http\Requests\RoleRequest\StoreRoleRequest;
+use App\Http\Requests\RoleRequest\UpdateRoleRequest;
+use App\Services\RoleServices\RoleService;
 
 class RoleController extends Controller
 {
-    use AuthorizesRequests;
-    public function index()
-    {
-      $this->authorize('manageRole');
-      $roles = Role::with('permissions')->paginate(5);
-      return response()->json($roles,200);
-    }
+  protected $roleService;
+  public function __construct(RoleService $roleService)
+  {
+    $this->roleService = $roleService;
+  }
+  public function index()
+  {
+    $roles = $this->roleService->getRoles();
+    return response()->json($roles, 200);
+  }
 
-    public function create()
-    {
-      //
-    }
+  public function store(StoreRoleRequest $request)
+  {
+    $validated = $request->validated();
+    $role = $this->roleService->createRole($validated);
+    return response()->json([
+      'message' => 'تم إنشاء الدور بنجاح',
+      'role' => $role->load('permissions')
+    ], 201);
+  }
 
-    public function store(Request $request)
-    {
-      $this->authorize('manageRole');
-      $validated = $request->validate([
-        'name' => 'required|string|unique:roles,name',
-        'permissions' => 'array|nullable',
-        'permissions.*' => 'string|exists:permissions,name'
-      ]);
+  public function update(UpdateRoleRequest $request, string $id)
+  {
+    $validated = $request->validated();
+    $role = $this->roleService->updateRole($validated, $id);
+    return response()->json([
+      'message' => 'تم تعديل الدور بنجاح',
+      'role' => $role->load('permissions')
+    ], 200);
+  }
 
-      if(Role::where('name', $validated['name'])->exists()) {
-        return back()->withErrors(['name' => 'هذا الدور موجود بالفعل.'])->withInput();
-      }
-      $role = Role::create($validated);
-      if(!empty($validated['permissions'])) {
-        $role->syncPermissions($validated['permissions']);
-      }
-      return response()->json([
-        'message' => 'تم إنشاء الدور بنجاح',
-        'role' => $role->load('permissions')
-      ],201);
-    }
-
-    public function edit(Role $role)
-    {
-      //
-    }
-
-    public function update(Request $request, Role $role)
-    {
-      $this->authorize('manageRole');
-      $validated = $request->validate([
-        'name' => 'required|string|unique:roles,name,' . $role->id,
-        'permissions' => 'array|nullable',
-        'permissions.*' => 'string|exists:permissions,name'
-      ]);
-
-      if(Role::where('name', $validated['name'])->where('id', '!=', $role->id)->exists()) {
-        return back()->withErrors(['name' => 'هذا الدور موجود بالفعل.'])->withInput();
-      }
-      $role->update($validated);
-
-      if(!empty($validated['permissions'])) {
-        $role->syncPermissions($validated['permissions']);
-      } else {
-        $role->syncPermissions([]);
-      }
-      return response()->json([
-        'message' => 'تم تعديل الدور بنجاح',
-        'role' => $role->load('permissions')
-      ],200);
-    }
-
-    public function show($id)
-    {
-      $role = Role::with('permissions')->findOrFail($id);
-      $this->authorize('manageRole');
-      return response()->json($role,200);
-    }
-    public function destroy(Role $role)
-    {
-      $this->authorize('manageRole');
-      $role->delete();
-      return redirect()->route('roles.index')->with('success', 'تم حذف الدور بنجاح.');
-    }
+  public function show(string $id)
+  {
+    $role = $this->roleService->getRole($id);
+    return response()->json($role, 200);
+  }
+  
+  public function destroy(string $id)
+  {
+    $role = $this->roleService->deleteRole($id);
+    return response()->json([
+      'message' => 'تم حذف الدور بنجاح',
+      'role' => $role
+    ], 200);
+  }
 }
