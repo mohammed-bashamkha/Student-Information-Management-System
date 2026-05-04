@@ -11,6 +11,8 @@ use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SchoolControlle;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\FinalResultImportController;
+use App\Http\Controllers\StudentsDataImportController;
 use App\Http\Controllers\PdfExportController;
 use App\Http\Controllers\SuspendedStudentController;
 use App\Http\Controllers\TransferAdmissionController;
@@ -50,6 +52,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // students route
         Route::apiResource('/students', StudentController::class);
+
+        // Import endpoints
+        Route::get('/import/final-result', [FinalResultImportController::class, 'showImportForm']);
+        Route::post('/import/final-result', [FinalResultImportController::class, 'importImproved']);
+        
+        Route::get('/students/import', [StudentsDataImportController::class, 'importForm']);
+        Route::post('/students/import', [StudentsDataImportController::class, 'import']);
 
         // certificate replacements — محمية
         Route::apiResource('/certificate-replacements', CertificateReplacementController::class)

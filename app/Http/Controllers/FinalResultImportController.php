@@ -13,7 +13,7 @@ class FinalResultImportController extends Controller
 {
     public function showImportForm()
     {
-        return view('import');
+        return response()->json(['message' => 'Ready to import']);
     }
 
     public function importImproved(FinalResultImportRequest $request)
@@ -44,18 +44,20 @@ class FinalResultImportController extends Controller
 
             // التحقق من وجود أخطاء
             if ($report['summary']['failed'] > 0) {
-                return redirect()->back()
-                    ->with('warning', 'تم الاستيراد مع بعض الأخطاء')
-                    ->with('import_report', $report);
+                return response()->json([
+                    'message' => 'تم الاستيراد مع بعض الأخطاء',
+                    'import_report' => $report
+                ], 207);
             }
 
-            return redirect()->back()
-                ->with('success', 'تم استيراد النتائج النهائية بنجاح')
-                ->with('import_report', $report);
+            return response()->json([
+                'message' => 'تم استيراد النتائج النهائية بنجاح',
+                'import_report' => $report
+            ]);
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء الاستيراد: ' . $e->getMessage())
-                ->withInput();
+            return response()->json([
+                'message' => 'حدث خطأ أثناء الاستيراد: ' . $e->getMessage()
+            ], 500);
         }
     }
 

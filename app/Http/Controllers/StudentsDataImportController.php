@@ -18,7 +18,7 @@ class StudentsDataImportController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(15);
 
-        return view('students.index', compact('students'));
+        return response()->json(['students' => $students]);
     }
 
     public function importForm()
@@ -27,7 +27,11 @@ class StudentsDataImportController extends Controller
         $school_classes = SchoolClass::all();
         $academicYears = AcademicYear::all();
 
-        return view('students.import', compact('schools', 'school_classes', 'academicYears'));
+        return response()->json([
+            'schools' => $schools,
+            'school_classes' => $school_classes,
+            'academicYears' => $academicYears,
+        ]);
     }
 
     /**
@@ -89,20 +93,23 @@ class StudentsDataImportController extends Controller
                 ]);
             }
 
-            // 5. إعادة التوجيه مع رسالة النجاح والتقرير
-            return back()->with([
-                'success'       => 'تم الانتهاء من عملية استيراد الطلاب بنجاح.',
+            // 5. إرجاع الاستجابة
+            return response()->json([
+                'message'       => 'تم الانتهاء من عملية استيراد الطلاب بنجاح.',
                 'import_report' => $report
             ]);
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             // أخطاء مكتبة إكسل
             $failures = $e->failures();
             Log::error('Excel Validation Error', ['failures' => $failures]);
-            return back()->with('error', 'يوجد خطأ في تركيبة ملف الإكسل. يرجى مراجعة البيانات.');
+            return response()->json([
+                'message' => 'يوجد خطأ في تركيبة ملف الإكسل. يرجى مراجعة البيانات.',
+                'failures' => $failures
+            ], 422);
         } catch (\Exception $e) {
             // أي أخطاء أخرى (مثل توقف قاعدة البيانات)
             Log::error('Import Error: ' . $e->getMessage());
-            return back()->with('error', 'حدث خطأ غير متوقع أثناء الاستيراد: ' . $e->getMessage());
+            return response()->json(['message' => 'حدث خطأ غير متوقع أثناء الاستيراد: ' . $e->getMessage()], 500);
         }
     }
 }

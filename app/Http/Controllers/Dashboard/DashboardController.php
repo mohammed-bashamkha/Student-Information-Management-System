@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
 use App\Models\CertificateReplacement;
 use App\Models\School;
 use App\Models\Student;
@@ -24,6 +25,7 @@ class DashboardController extends Controller
         $admissionPending = TransfersAdmission::where('status', 'pending')
             ->where('type', 'admission')->count();
         $certificateReplacements = CertificateReplacement::count();
+        $activeAcademicYear = AcademicYear::where('status','active')->first();
 
         $expiredAdmissions = Student::whereHas('currentEnrollment', function ($q) {
             $q->where('status', 'suspended');
@@ -55,6 +57,7 @@ class DashboardController extends Controller
         });
 
         return response()->json([
+            'active_academic_year' => $activeAcademicYear,
             'kpis' => [
                 'total_students' => $studentsCount,
                 'active_schools' => $schoolsCount,

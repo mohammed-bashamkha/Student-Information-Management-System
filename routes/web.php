@@ -20,20 +20,12 @@ Route::get('/export/student-errors', [ErrorController::class, 'exportStudentErro
 Route::get('/export/final-result', [FinalResultExportController::class, 'exportFinalResults'])
     ->name('final-result.export');
 
-Route::get('/import/final-result', [FinalResultController::class, 'showImport'])
-    ->name('import.form');
 
-Route::post('/import/final-result', [FinalResultImportController::class, 'importImproved'])
-    ->name('import.submit');
 
 Route::get('/final-results', [FinalResultController::class, 'index']);
 Route::get('/student/{id}', [StudentController::class, 'show'])->name('students.show');
 
-// عرض صفحة الاستيراد
-Route::get('/students/import', [StudentsDataImportController::class, 'importForm'])->name('students.import.form');
 
-// معالجة ملف الإكسل
-Route::post('/students/import', [StudentsDataImportController::class, 'import'])->name('students.import.submit');
 
 Route::get('/students-index', [StudentsDataImportController::class, 'index'])->name('students.students-index');
 
