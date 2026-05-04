@@ -13,7 +13,7 @@ class UserService
     public function getUsers()
     {
         $this->authorize('viewAny', User::class);
-        $users = User::with('roles')->paginate(5);
+        $users = User::with('roles')->get();
         return $users;
     }
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest\StoreUserRequest;
+use App\Http\Requests\UserRequest\UpdateUserRequest;
 use App\Services\UserServices\UserService;
-use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -36,15 +36,9 @@ class UserController extends Controller
         return response()->json($user,200);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateUserRequest $request, string $id)
     {
-        $validate = $request->validate([
-        'name' => 'sometimes|string|max:255',
-        'email' => 'sometimes|string|email|max:255|unique:users,email,' .$id,
-        'password' => 'nullable|string|min:8|confirmed',
-        'roles' => 'array|nullable',
-        'roles.*' => 'string|exists:roles,name'
-        ]);
+        $validate = $request->validated();
         $user = $this->userService->editUser($request, $validate, $id);
         return response()->json([
             'message' => 'تم تعديل المستخدم بنجاح',
