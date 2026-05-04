@@ -4,46 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SubjectRequest\StoreSubjectRequest;
 use App\Http\Requests\SubjectRequest\UpdateSubjectRequest;
-use App\Models\Subject;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\SubjectServices\SubjectService;
 
 class SubjectController extends Controller
 {
-    use AuthorizesRequests;
-
+    protected $subjectService;
+    public function __construct(SubjectService $subjectService)
+    {
+        $this->subjectService = $subjectService;
+    }
     public function index()
     {
-        $this->authorize('viewAny',Subject::class);
-        $subjects = Subject::with('schoolClass')->paginate(5);
+        $subjects = $this->subjectService->getSubjects();
         return response()->json($subjects, 200);
     }
 
     public function store(StoreSubjectRequest $request)
     {
-        $this->authorize('create',Subject::class);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $subject = Subject::create($data);
+        $validateData = $request->validated();
+        $subject = $this->subjectService->storeSubject($validateData);
         return response()->json([
             'message' => 'تم انشاء المادة الدراسية بنجاح',
             'data' => $subject->load('schoolClass')
         ], 201);
     }
 
-    public function show(string $id)
-    {
-        //
-    }
-
     public function update(UpdateSubjectRequest $request, string $id)
     {
-        $subject = Subject::findOrFail($id);
-        $this->authorize('update',$subject);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $subject->update($data);
+        $validateData = $request->validated();
+        $subject = $this->subjectService->updateSubject($validateData, $id);
 
         return response()->json([
             'message' => 'تم تعديل المادة الدراسية بنجاح',
@@ -53,10 +42,7 @@ class SubjectController extends Controller
 
     public function destroy(string $id)
     {
-        $subject = Subject::findOrFail($id);
-        $this->authorize('delete',$subject);
-        $subject->delete();
-
+        $subject = $this->subjectService->deleteSubject($id);
         return response()->json([
             'message' => 'تم حدف المادة الدراسية بنجاح',
             'data' => $subject->name

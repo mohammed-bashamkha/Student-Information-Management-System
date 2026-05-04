@@ -24,8 +24,9 @@ class StoreSubjectRequest extends FormRequest
     {
         return [
             'level_id' => 'integer|required|exists:levels,id',
-            'school_class_id' => 'integer|required|exists:school_classes,id',
             'name' => 'required|string|max:50',
+            'school_class_id' => 'array|nullable',
+            'school_class_id.*' => 'required|exists:school_classes,id|min:1'
         ];
     }
 }

@@ -24,8 +24,9 @@ class UpdateSubjectRequest extends FormRequest
     {
         return [
             'level_id' => 'sometimes|integer|exists:levels,id',
-            'school_class_id' => 'sometimes|integer|exists:school_classes,id',
             'name' => 'sometimes|string|max:50',
+            'school_class_id' => 'sometimes|array|nullable',
+            'school_class_id.*' => 'required|exists:school_classes,id|min:1',
         ];
     }
 }
