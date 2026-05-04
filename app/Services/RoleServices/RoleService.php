@@ -12,7 +12,7 @@ class RoleService
     public function getRoles()
     {
         $this->authorize('manageRole');
-        $roles = Role::with('permissions')->paginate(5);
+        $roles = Role::with('permissions')->get();
         return $roles;
     }
 

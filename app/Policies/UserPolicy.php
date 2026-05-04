@@ -22,7 +22,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->can('المستخدمين.ادارة') && $user->id !== $model->id;
+        return $user->can('المستخدمين.ادارة');
     }
 
     /**

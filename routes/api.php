@@ -21,7 +21,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
-    return $request->user()->load('roles');
+    $user = $request->user()->load('roles');
+    // Append all permissions (direct + via roles) so the frontend can check them
+    $user->permissions_list = $user->getAllPermissions()->pluck('name')->values();
+    return $user;
 })->middleware('auth:sanctum');
 
 // Route::get('/export/final-result', [FinalResultController::class, 'export'])
