@@ -9,34 +9,64 @@ use Illuminate\Support\Facades\Auth;
 class SubjectService
 {
     use AuthorizesRequests;
-    public function getSubjects()
+    public function getSubjects(array $filters = [])
     {
-        $this->authorize('viewAny',Subject::class);
-        $subjects = Subject::with('schoolClass')->paginate(5);
-        return $subjects;
+        $this->authorize('viewAny', Subject::class);
+        
+        $query = Subject::with(['schoolClasses', 'level']);
+
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['level_id'])) {
+            $query->where('level_id', $filters['level_id']);
+        }
+
+        return $query->get();
     }
     
     public function storeSubject(array $validateData)
     {
-        $this->authorize('create',Subject::class);
-        $validateData['created_by'] = Auth::id();
-        $subject = Subject::create($validateData);
+        $this->authorize('create', Subject::class);
+
+        $subject = Subject::create([
+            'name'       => $validateData['name'],
+            'level_id'   => $validateData['level_id'],
+            'created_by' => Auth::id(),
+        ]);
+
+        if (!empty($validateData['school_class_id'])) {
+            $subject->schoolClasses()->sync($validateData['school_class_id']);
+        }
+
         return $subject;
     }
 
     public function updateSubject(array $validateData, string $id)
     {
         $subject = Subject::findOrFail($id);
-        $this->authorize('update',$subject);
-        $validateData['created_by'] = Auth::id();
-        $subject->update($validateData);
+        $this->authorize('update', $subject);
+        $subject->update([
+            'name'       => $validateData['name'],
+            'level_id'   => $validateData['level_id'],
+        ]);
+        
+        if (!empty($validateData['school_class_id'])) {
+            $subject->schoolClasses()->sync($validateData['school_class_id']);
+        }
         return $subject;
     }
 
     public function deleteSubject(string $id)
     {
-        $subject = Subject::findOrFail($id);
-        $this->authorize('delete',$subject);
+        $subject = Subject::withCount('grades')->findOrFail($id);
+        $this->authorize('delete', $subject);
+
+        if ($subject->grades_count > 0) {
+            throw new \Exception('لا يمكن حذف المادة الدراسية لوجود درجات مسجلة بها', 403);
+        }
+
         $subject->delete();
         return $subject;
     }

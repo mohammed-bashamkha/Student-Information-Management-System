@@ -13,7 +13,7 @@ class SubjectPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('المواد.عرض');
+        return $user->can('المواد.عرض') || $user->can('المواد.ادارة');
     }
 
     /**
@@ -21,7 +21,7 @@ class SubjectPolicy
      */
     public function view(User $user, Subject $subject): bool
     {
-        return false;
+        return $user->can('المواد.عرض') || $user->can('المواد.ادارة');
     }
 
     /**
@@ -29,7 +29,7 @@ class SubjectPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('المواد.ادارة');
+        return $user->can('المواد.اضافة') || $user->can('المواد.ادارة');
     }
 
     /**
@@ -37,7 +37,7 @@ class SubjectPolicy
      */
     public function update(User $user, Subject $subject): bool
     {
-        return $user->can('المواد.ادارة');
+        return $user->can('المواد.تعديل') || $user->can('المواد.ادارة');
     }
 
     /**
@@ -45,7 +45,7 @@ class SubjectPolicy
      */
     public function delete(User $user, Subject $subject): bool
     {
-        return $user->can('المواد.ادارة');
+        return $user->can('المواد.حذف') || $user->can('المواد.ادارة');
     }
 
     /**
