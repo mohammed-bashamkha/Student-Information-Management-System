@@ -60,4 +60,10 @@ class RoleService
         $role->delete();
         return $role;
     }
+
+    public function getPermissions()
+    {
+        $this->authorize('manageRole');
+        return \Spatie\Permission\Models\Permission::all();
+    }
 }

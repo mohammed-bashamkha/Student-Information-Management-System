@@ -34,8 +34,7 @@ class SubjectController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $subject = Subject::with(['schoolClasses', 'level'])->findOrFail($id);
-        $this->authorize('view', $subject);
+        $subject = $this->subjectService->getSubjectById($id);
         return response()->json($subject, 200);
     }
 

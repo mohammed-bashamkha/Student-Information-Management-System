@@ -58,6 +58,13 @@ class SubjectService
         return $subject;
     }
 
+    public function getSubjectById(string $id)
+    {
+        $this->authorize('view', Subject::class);
+        $subject = Subject::with(['schoolClasses', 'level'])->findOrFail($id);
+        return $subject;
+    }
+
     public function deleteSubject(string $id)
     {
         $subject = Subject::withCount('grades')->findOrFail($id);

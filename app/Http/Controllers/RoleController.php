@@ -53,4 +53,10 @@ class RoleController extends Controller
       'role' => $role
     ], 200);
   }
+
+  public function permissions()
+  {
+    $permissions = $this->roleService->getPermissions();
+    return response()->json($permissions, 200);
+  }
 }

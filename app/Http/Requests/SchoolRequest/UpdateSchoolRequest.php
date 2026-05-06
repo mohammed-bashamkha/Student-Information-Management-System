@@ -25,6 +25,7 @@ class UpdateSchoolRequest extends FormRequest
         return [
             'name' => 'sometimes|string|max:255',
             'school_type' => 'sometimes|string|in:public,private',
+            'capacity' => 'sometimes|integer|min:1',
             'address' => 'sometimes|string|max:255'
         ];
     }

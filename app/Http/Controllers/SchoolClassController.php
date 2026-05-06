@@ -3,27 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SchoolClassRequest\SchoolClassRequest;
-use App\Models\SchoolClass;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\SchoolClassServices\SchoolClassService;
+
 
 class SchoolClassController extends Controller
 {
-    use AuthorizesRequests;
+    protected $schoolClassService;
+    public function __construct(SchoolClassService $schoolClassService)
+    {
+        $this->schoolClassService = $schoolClassService;
+    }
     public function index()
     {
-        $this->authorize('viewAny', SchoolClass::class);
-        $schoolClasses = SchoolClass::with('level')->paginate(5);
+        $schoolClasses = $this->schoolClassService->getSchoolClasses();
         return response()->json($schoolClasses, 200);
     }
 
     public function store(SchoolClassRequest $request)
     {
-        $this->authorize('manageSchoolClass', SchoolClass::class);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $schoolClass = SchoolClass::create($data);
+        $validateData = $request->validated();
+        $schoolClass = $this->schoolClassService->storeSchoolClass($validateData);
         return response()->json([
             'message' => 'تم انشاء الصف بنجاح',
             'data' => $schoolClass
@@ -37,11 +36,8 @@ class SchoolClassController extends Controller
 
     public function update(SchoolClassRequest $request, string $id)
     {
-        $schoolClass = SchoolClass::findOrFail($id);
-        $this->authorize('manageSchoolClass', $schoolClass);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $schoolClass->update($data);
+        $validateData = $request->validated();
+        $schoolClass = $this->schoolClassService->updateSchoolClass($validateData, $id);
         return response()->json([
             'message' => 'تم تحديث الصف بنجاح',
             'data' => $schoolClass
@@ -50,9 +46,7 @@ class SchoolClassController extends Controller
     
     public function destroy(string $id)
     {
-        $schoolClass = SchoolClass::findOrFail($id);
-        $this->authorize('manageSchoolClass', $schoolClass);
-        $schoolClass->delete();
+        $schoolClass = $this->schoolClassService->deleteSchoolClass($id);
         return response()->json([
             'message' => 'تم حذف الصف بنجاح',
             'data' => $schoolClass->name

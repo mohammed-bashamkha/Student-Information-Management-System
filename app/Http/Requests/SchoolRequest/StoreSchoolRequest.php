@@ -25,6 +25,7 @@ class StoreSchoolRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'school_type' => 'required|string|in:public,private',
+            'capacity' => 'required|integer|min:1',
             'address' => 'required|string|max:255'
         ];
     }

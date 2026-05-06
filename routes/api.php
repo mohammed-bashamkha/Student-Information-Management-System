@@ -8,7 +8,7 @@ use App\Http\Controllers\FinalResultController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SchoolClassController;
-use App\Http\Controllers\SchoolControlle;
+use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\FinalResultImportController;
@@ -17,6 +17,7 @@ use App\Http\Controllers\PdfExportController;
 use App\Http\Controllers\SuspendedStudentController;
 use App\Http\Controllers\TransferAdmissionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LevelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,11 +41,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // users routes
         Route::apiResource('/users', UserController::class);
         // roles routes
+        Route::get('/permissions', [RoleController::class, 'permissions']);
         Route::apiResource('/roles', RoleController::class);
         // academic year routes
         Route::apiResource('/academic-year', AcademicYearController::class);
+        // levels route
+        Route::get('/levels', [LevelController::class, 'index']);
         // schools routes
-        Route::apiResource('/schools', SchoolControlle::class);
+        Route::apiResource('/schools', SchoolController::class);
         // subjects routes
         Route::apiResource('/subjects', SubjectController::class);
         // school classes routes

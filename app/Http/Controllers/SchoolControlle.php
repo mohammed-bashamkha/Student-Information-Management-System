@@ -4,27 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SchoolRequest\StoreSchoolRequest;
 use App\Http\Requests\SchoolRequest\UpdateSchoolRequest;
-use App\Models\School;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\SchoolServices\SchoolService;
 
 class SchoolControlle extends Controller
-{   
-    use AuthorizesRequests;
+{   protected $schoolService;
+    public function __construct(SchoolService $schoolService)
+    {
+        $this->schoolService = $schoolService;
+    }
     public function index()
     {
-        $this->authorize('viewAny',School::class);
-        $schools = School::paginate(5);
+        $schools = $this->schoolService->getSchools();
         return response()->json($schools, 200);
     }
 
     public function store(StoreSchoolRequest $request)
     {
-        $this->authorize('create',School::class);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $school = School::create($data);
+        $validateData = $request->validated();
+        $school = $this->schoolService->storeSchool($validateData);
         return response()->json([
             'message' => 'تم اضافة المدرسة بنجاح',
             'data' => $school
@@ -33,11 +30,8 @@ class SchoolControlle extends Controller
 
     public function update(UpdateSchoolRequest $request, string $id)
     {
-        $school = School::findOrFail($id);
-        $this->authorize('update',$school);
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
-        $school->update($data);
+        $validateData = $request->validated();
+        $school = $this->schoolService->updateSchool($validateData, $id);
         return response()->json([
             'message' => 'تم تعديل المدرسة بنجاح',
             'data' => $school
@@ -46,12 +40,10 @@ class SchoolControlle extends Controller
 
     public function destroy(string $id)
     {
-        $school = School::findOrFail($id);
-        $this->authorize('delete',$school);
-        $school->delete();
+        $school = $this->schoolService->deleteSchool($id);
         return response()->json([
             'message' => 'تم حدف السنة الدراسية بنجاح',
-            'data' => $school->name
+            'data' => $school
         ], 200);
     }
 }

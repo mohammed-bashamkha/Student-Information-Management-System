@@ -45,18 +45,21 @@ class UserService
         $user = User::with('roles')->findOrFail($id);
         $this->authorize('update', $user);
 
-        if($request->filled(['name','email','password']))
-        {
-            $user->update([
-                'name' => $validate['name'],
-                'email' => $validate['email'],
-                'password' => Hash::make($validate['password']),
-            ]);
+        $updateData = [
+            'name' => $validate['name'],
+            'email' => $validate['email'],
+        ];
+
+        if (!empty($validate['password'])) {
+            $updateData['password'] = Hash::make($validate['password']);
         }
-        if(!empty($validate['roles']))
-        {
-            $user->assignRole($validate['roles']);
+
+        $user->update($updateData);
+
+        if (isset($validate['roles'])) {
+            $user->syncRoles($validate['roles']);
         }
+        
         return $user->load('roles');
     }
 

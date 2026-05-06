@@ -13,7 +13,7 @@ class SchoolPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('السنة_الدراسية.عرض');
+        return $user->can('المدارس.عرض') || $user->can('المدارس.ادارة');
     }
 
     /**
@@ -21,7 +21,7 @@ class SchoolPolicy
      */
     public function view(User $user, School $school): bool
     {
-        return $user->can('السنة_الدراسية.عرض');
+        return $user->can('المدارس.عرض') || $user->can('المدارس.ادارة');
     }
 
     /**
@@ -29,7 +29,7 @@ class SchoolPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('السنة_الدراسية.ادارة');
+        return $user->can('المدارس.اضافة') || $user->can('المدارس.ادارة');
     }
 
     /**
@@ -37,7 +37,7 @@ class SchoolPolicy
      */
     public function update(User $user, School $school): bool
     {
-        return $user->can('السنة_الدراسية.ادارة');
+        return $user->can('المدارس.تعديل') || $user->can('المدارس.ادارة');
     }
 
     /**
@@ -45,7 +45,7 @@ class SchoolPolicy
      */
     public function delete(User $user, School $school): bool
     {
-        return $user->can('السنة_الدراسية.ادارة');
+        return $user->can('المدارس.حذف') || $user->can('المدارس.ادارة');
     }
 
     /**

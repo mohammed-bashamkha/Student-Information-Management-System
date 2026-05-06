@@ -27,7 +27,7 @@ class SchoolClass extends Model
 
     public function subjects()
     {
-        return $this->hasMany(Subject::class, 'school_class_id');
+        return $this->belongsToMany(Subject::class, 'subject_school_class');
     }
 
     public function enrollments()
