@@ -5,7 +5,7 @@ namespace App\Http\Requests\CertificateReplacementRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCertificateReplacementReuest extends FormRequest
+class UpdateCertificateReplacementRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,14 +23,9 @@ class StoreCertificateReplacementReuest extends FormRequest
     public function rules(): array
     {
         return [
-            'student_id'       => 'required|exists:students,id',
-            'school_id'        => 'required|exists:schools,id',
-            'class_id'        => 'required|exists:schools,id',
-            'academic_year_id' => 'required|exists:academic_years,id',
             'certificate_type' => 'required|string|max:100',
             'notes'            => 'nullable|string|max:500',
-            'request_date'     => 'required|string|date',
-            'student_image'    => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
+            'request_date'     => 'nullable|date'
         ];
     }
 }

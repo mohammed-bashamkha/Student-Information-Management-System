@@ -2,67 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CertificateReplacementRequest\StoreCertificateReplacementReuest;
-use App\Http\Requests\CertificateReplacementRequest\UpdateCertificateReplacementReuest;
-use App\Models\CertificateReplacement;
-use App\Traits\UploadFileTrait;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Requests\CertificateReplacementRequest\StoreCertificateReplacementRequest;
+use App\Http\Requests\CertificateReplacementRequest\UpdateCertificateReplacementRequest;
+use App\Services\CertificateReplacementServices\CertificateReplacementService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CertificateReplacementController extends Controller
 {
-    use AuthorizesRequests;
-    use UploadFileTrait;
+    protected $certificateService;
+
+    public function __construct(CertificateReplacementService $certificateService)
+    {
+        $this->certificateService = $certificateService;
+    }
+
     public function index(Request $request)
     {
-        $this->authorize('viewAny', CertificateReplacement::class);
-
-        $query = CertificateReplacement::with(['student', 'school', 'schoolClass', 'academicYear', 'createdBy']);
-
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->whereHas('student', function ($q) use ($searchTerm) {
-                $q->where('full_name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('school_number', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('seat_number', 'LIKE', "%{$searchTerm}%");
-            });
-        }
-
-        if ($request->filled('school_id')) {
-            $query->where('school_id', $request->school_id);
-        }
-
-        if ($request->filled('class_id')) {
-            $query->where('class_id', $request->class_id);
-        }
-
-        if ($request->filled('academic_year_id')) {
-            $query->where('academic_year_id', $request->academic_year_id);
-        }
-
-        if ($request->filled('certificate_type')) {
-            $query->where('certificate_type', $request->certificate_type);
-        }
-
-        $certificates = $query->latest()->paginate(15);
-
+        $certificates = $this->certificateService->getCertificates($request->all());
         return response()->json($certificates, 200);
     }
 
-    public function store(StoreCertificateReplacementReuest $request)
+    public function store(StoreCertificateReplacementRequest $request)
     {
-        $this->authorize('create', CertificateReplacement::class);
-
-        $data = $request->validated();
-
-        $data['created_by'] = Auth::id();
-
-        if ($request->hasFile('student_image')) {
-            $data['student_image'] = $this->uploadFile($request->file('student_image'), 'certificate_replacements/students-images');
-        }
-
-        $certificate = CertificateReplacement::create($data);
+        $certificate = $this->certificateService->storeCertificate(
+            $request->validated(),
+            $request->file('student_image')
+        );
 
         return response()->json([
             'message' => 'تم تسجيل إصدار الشهادة بنجاح',
@@ -72,29 +37,17 @@ class CertificateReplacementController extends Controller
 
     public function show($id)
     {
-        $certificate = CertificateReplacement::with(['student', 'school', 'academicYear', 'user'])->findOrFail($id);
-        $this->authorize('view', $certificate);
-
+        $certificate = $this->certificateService->getCertificateById($id);
         return response()->json(['data' => $certificate], 200);
     }
 
-    public function update(UpdateCertificateReplacementReuest $request, $id)
+    public function update(UpdateCertificateReplacementRequest $request, $id)
     {
-        $certificate = CertificateReplacement::findOrFail($id);
-        $this->authorize('update', $certificate);
-
-        $data = $request->validated();
-
-        if ($request->hasFile('student_image')) {
-            $data['student_image'] = $this->uploadFile(
-                $request->file('student_image'),
-                'certificate_replacements/students-images',
-                'public',
-                $certificate->student_image
-            );
-        }
-
-        $certificate->update($data);
+        $certificate = $this->certificateService->updateCertificate(
+            $request->validated(),
+            $id,
+            $request->file('student_image')
+        );
 
         return response()->json([
             'message' => 'تم تعديل بيانات الشهادة المصدرة بنجاح',
@@ -104,9 +57,7 @@ class CertificateReplacementController extends Controller
 
     public function destroy($id)
     {
-        $certificate = CertificateReplacement::findOrFail($id);
-        $this->authorize('delete', $certificate);
-        $certificate->delete();
+        $this->certificateService->deleteCertificate($id);
 
         return response()->json([
             'message' => 'تم إلغاء سجل الشهادة بنجاح'
