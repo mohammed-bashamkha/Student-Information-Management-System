@@ -4,66 +4,51 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinalResultRequest\FinalResultImportRequest;
 use App\Imports\FinalResultImport;
-use App\Imports\FinalResultImportImproved;
+use App\Services\FinalResultImportServices\FinalResultImportService;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
 
 class FinalResultImportController extends Controller
 {
+    protected $importService;
+
+    public function __construct(FinalResultImportService $importService)
+    {
+        $this->importService = $importService;
+    }
+
     public function showImportForm()
     {
-        return response()->json(['message' => 'Ready to import']);
+        return response()->json($this->importService->ImportForm());
     }
 
     public function importImproved(FinalResultImportRequest $request)
     {
         try {
-            $import = new FinalResultImportImproved(
-                $request->academic_year_id,
-                $request->class_id,
-                $request->school_id
+            $result = $this->importService->importResults(
+                $request->validated(),
+                $request->file('file'),
+                $request->boolean('preview')
             );
 
-            if ($request->boolean('preview')) {
-                $import->preview = true;
+            if ($result['status'] === 'preview') {
+                return response()->json($result);
             }
 
-            Excel::import($import, $request->file('file'));
-
-            // الحصول على تقرير الاستيراد
-            $report = $import->getImportReport();
-
-            if ($request->boolean('preview')) {
-                return response()->json([
-                    'status' => 'preview',
-                    'report' => $report,
-                    'sample_data' => $import->previewData,
-                ]);
-            }
-
-            // التحقق من وجود أخطاء
-            if ($report['summary']['failed'] > 0) {
-                return response()->json([
-                    'message' => 'تم الاستيراد مع بعض الأخطاء',
-                    'import_report' => $report
-                ], 207);
-            }
+            $statusCode = $result['report']['summary']['failed'] > 0 ? 207 : 200;
 
             return response()->json([
-                'message' => 'تم استيراد النتائج النهائية بنجاح',
-                'import_report' => $report
-            ]);
+                'message' => $result['message'],
+                'import_report' => $result['report']
+            ], $statusCode);
+
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'حدث خطأ أثناء الاستيراد: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
         }
     }
 
-    /**
-     * تصدير تقرير الاستيراد إلى JSON
-     */
     public function exportImportReport(Request $request)
     {
         if (!$request->session()->has('import_report')) {
