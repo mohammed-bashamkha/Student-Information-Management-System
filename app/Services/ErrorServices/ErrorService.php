@@ -48,7 +48,8 @@ class ErrorService
         $errorRecord = Error::with([
             'student', 'createdBy', 
             'academicYear', 'schoolClass', 'school'])->findOrFail($id);
-            return $errorRecord;
+        $this->authorize('viewAny', $errorRecord);
+        return $errorRecord;
     }
 
     public function deleteError(string $id)

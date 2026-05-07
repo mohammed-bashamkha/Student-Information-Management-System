@@ -23,7 +23,7 @@ class PdfExportController extends Controller
             'createdBy',
         ])->findOrFail($id);
 
-        $this->authorize('view', $certificate);
+        $this->authorize('certificateReplacementExport', $certificate);
 
         // منع تصدير PDF للطالب الموقوف
         if ($certificate->student?->isSuspended()) {
@@ -64,7 +64,7 @@ class PdfExportController extends Controller
             'createdBy',
         ])->where('type', 'transfer')->findOrFail($id);
 
-        $this->authorize('view', $transfer);
+        $this->authorize('transferExport', $transfer);
 
         // منع تصدير PDF للطالب الموقوف
         if ($transfer->student?->isSuspended()) {
@@ -103,7 +103,7 @@ class PdfExportController extends Controller
             'createdBy',
         ])->where('type', 'admission')->findOrFail($id);
 
-        $this->authorize('view', $admission);
+        $this->authorize('certificateReplacementExport', $admission);
 
         // منع تصدير PDF للطالب الموقوف
         if ($admission->student?->isSuspended()) {
@@ -145,6 +145,8 @@ class PdfExportController extends Controller
             'student.schoolClass',
             'academicYear',
         ])->findOrFail($id);
+
+        $this->authorize('finalResultExport', $finalResult);
 
         $student = $finalResult->student;
 
