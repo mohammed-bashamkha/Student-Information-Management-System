@@ -4,7 +4,8 @@
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 
-**SIMS (Student Information Management System)** is a comprehensive and advanced School Resource Planning system built with the **Laravel** framework (Backend API). It is designed to manage all aspects of student affairs, grades, final results, transfers, and admissions, in addition to organizing academic years and managing users with precise role-based permissions.
+**SIMS (Student Information Management System)** for the **Ministry of Education, Yemen - Hadhramaut Coast Branch**.
+The system provides a centralized electronic platform for managing student records across various educational stages. It supports core administrative operations such as student registration, data updating and correction, temporary admissions, student transfers between schools, grades management, certificate issuance, and statistical reporting. Built with the **Laravel** framework (Backend API), the system also ensures data protection through secure login mechanisms and precise role-based permissions.
 
 ---
 
