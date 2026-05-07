@@ -4,6 +4,7 @@ namespace App\Services\CertificateReplacementServices;
 
 use App\Models\CertificateReplacement;
 use App\Traits\UploadFileTrait;
+use App\Services\ActivityLogServices\ActivityLogService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +13,13 @@ class CertificateReplacementService
 {
     use AuthorizesRequests;
     use UploadFileTrait;
+
+    protected $activityLogService;
+
+    public function __construct(ActivityLogService $activityLogService)
+    {
+        $this->activityLogService = $activityLogService;
+    }
 
     public function getCertificates(array $filters = [])
     {
@@ -57,7 +65,17 @@ class CertificateReplacementService
             $data['student_image'] = $this->uploadFile($imageFile, 'certificate_replacements/students-images');
         }
 
-        return CertificateReplacement::create($data);
+        $certificate = CertificateReplacement::create($data);
+
+        $certificate->load('student');
+        $this->activityLogService->logAction(
+            'certificate_replacements',
+            $certificate,
+            'create',
+            "تم تسجيل إصدار شهادة (بدل فاقد/تالف) للطالب: {$certificate->student->full_name}"
+        );
+
+        return $certificate;
     }
 
     public function getCertificateById($id)
@@ -82,6 +100,15 @@ class CertificateReplacementService
         }
 
         $certificate->update($data);
+
+        $certificate->load('student');
+        $this->activityLogService->logAction(
+            'certificate_replacements',
+            $certificate,
+            'update',
+            "تم تعديل بيانات الشهادة المصدرة للطالب: {$certificate->student->full_name}"
+        );
+
         return $certificate;
     }
 
@@ -95,7 +122,16 @@ class CertificateReplacementService
             // $this->deleteFile($certificate->student_image); // If trait has deleteFile
         }
 
+        $name = $certificate->student->full_name ?? 'غير معروف';
         $certificate->delete();
+
+        $this->activityLogService->logAction(
+            'certificate_replacements',
+            $certificate,
+            'delete',
+            "تم إلغاء سجل الشهادة للطالب: {$name}"
+        );
+
         return $certificate;
     }
 }

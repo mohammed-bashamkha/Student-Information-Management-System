@@ -5,6 +5,7 @@ namespace App\Services\GradeServices;
 use App\Models\Grade;
 use App\Models\StudentEnrollment;
 use App\Models\Subject;
+use App\Services\ActivityLogServices\ActivityLogService;
 use App\Services\ResultCalculationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
@@ -15,9 +16,12 @@ class GradeService
 {
     use AuthorizesRequests;
     protected $resultCalculationService;
-    public function __construct(ResultCalculationService $resultCalculationService)
+    protected $activityLogService;
+
+    public function __construct(ResultCalculationService $resultCalculationService, ActivityLogService $activityLogService)
     {
         $this->resultCalculationService = $resultCalculationService;
+        $this->activityLogService = $activityLogService;
     }
 
     public function getGrades()
@@ -40,7 +44,7 @@ class GradeService
         $validateData['class_id']   = $enrollment->class_id;
         $validateData['academic_year_id'] = $enrollment->academic_year_id;
 
-        return DB::transaction(function () use ($validateData) {
+        $grade = DB::transaction(function () use ($validateData) {
             $grade = Grade::create($validateData);
 
             $this->resultCalculationService->calculateFinalResult(
@@ -50,6 +54,16 @@ class GradeService
 
             return $grade;
         });
+
+        $grade->load(['student', 'subject']);
+        $this->activityLogService->logAction(
+            'grades',
+            $grade,
+            'create',
+            "تم إضافة درجة للطالب: {$grade->student->full_name} في مقرر: {$grade->subject->name}"
+        );
+
+        return $grade;
     }
 
     public function getGradeById(string $id)
@@ -79,7 +93,7 @@ class GradeService
         $totalSemesteres = $validateData['first_semester_total'] + $validateData['second_semester_total'];
         $validateData['total'] = $totalSemesteres;
 
-        return DB::transaction(function () use ($grade, $validateData) {
+        $grade = DB::transaction(function () use ($grade, $validateData) {
             $grade->update($validateData);
             $this->resultCalculationService->calculateFinalResult(
                 $grade->student_id,
@@ -87,6 +101,16 @@ class GradeService
             );
             return $grade;
         });
+
+        $grade->load(['student', 'subject']);
+        $this->activityLogService->logAction(
+            'grades',
+            $grade,
+            'update',
+            "تم تعديل درجة الطالب: {$grade->student->full_name} في مقرر: {$grade->subject->name}"
+        );
+
+        return $grade;
     }
 
     private function validateEnrollment(array $data)
@@ -125,6 +149,14 @@ class GradeService
             $grade->delete();
             $this->resultCalculationService->calculateFinalResult($studentId, $academicYearId);
         });
+
+        $this->activityLogService->logAction(
+            'grades',
+            $grade,
+            'delete',
+            "تم حذف درجة الطالب: {$grade->student->full_name} في مقرر: {$grade->subject->name}"
+        );
+
         return $grade;
     }
 }

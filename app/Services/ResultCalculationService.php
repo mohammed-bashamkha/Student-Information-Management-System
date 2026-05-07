@@ -5,10 +5,17 @@ namespace App\Services;
 use App\Models\Grade;
 use App\Models\StudentEnrollment;
 use App\Models\FinalResult;
+use App\Services\ActivityLogServices\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
 
 class ResultCalculationService
 {
+    protected $activityLogService;
+
+    public function __construct(ActivityLogService $activityLogService)
+    {
+        $this->activityLogService = $activityLogService;
+    }
     public function calculateFinalResult($studentId, $academicYearId, $userId = null)
     {
         $userId = $userId ?? Auth::id() ?? 1;
@@ -52,7 +59,7 @@ class ResultCalculationService
             return null;
         }
 
-        return FinalResult::updateOrCreate(
+        $result = FinalResult::updateOrCreate(
             ['student_id' => $studentId, 'academic_year_id' => $academicYearId],
             [
                 'total_student_grades' => $totalSum,
@@ -64,5 +71,14 @@ class ResultCalculationService
                 'notes'                => $notes
             ]
         );
+
+        $this->activityLogService->logAction(
+            'final_results',
+            $result,
+            'update',
+            "تم احتساب/تحديث النتيجة النهائية للطالب: {$student->full_name}"
+        );
+
+        return $result;
     }
 }
