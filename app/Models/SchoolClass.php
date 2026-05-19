@@ -17,7 +17,7 @@ class SchoolClass extends Model
 
     public function students()
     {
-        return $this->hasMany(Student::class, 'class_id');
+        return $this->hasManyThrough(Student::class, StudentEnrollment::class, 'class_id', 'id', 'id', 'student_id');
     }
 
     public function level()
