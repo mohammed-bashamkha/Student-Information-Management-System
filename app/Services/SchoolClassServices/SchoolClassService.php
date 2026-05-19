@@ -12,7 +12,9 @@ class SchoolClassService
     public function getSchoolClasses()
     {
         $this->authorize('viewAny', SchoolClass::class);
-        $schoolClasses = SchoolClass::with('level')->get();
+        $schoolClasses = SchoolClass::with('level')
+            ->withCount(['students', 'subjects'])
+            ->get();
         return $schoolClasses;
     }
 
@@ -37,6 +39,16 @@ class SchoolClassService
     {
         $schoolClass = SchoolClass::findOrFail($id);
         $this->authorize('manageSchoolClass', $schoolClass);
+        
+        // التحقق من وجود طلاب أو مواد مرتبطة لمنع الحذف
+        if ($schoolClass->students()->count() > 0 || $schoolClass->enrollments()->count() > 0) {
+            throw new \Exception('لا يمكن حذف الصف الدراسي لوجود طلاب مسجلين به.', 400);
+        }
+
+        if ($schoolClass->subjects()->count() > 0) {
+            throw new \Exception('لا يمكن حذف الصف الدراسي لوجود مواد دراسية مرتبطة به.', 400);
+        }
+
         $schoolClass->delete();
         return $schoolClass;
     }

@@ -30,6 +30,7 @@ class StoreAdmissionRequest extends FormRequest
             'start_date'       => 'nullable|date',
             'end_date'         => 'nullable|date|after_or_equal:start_date',
             'based_on'         => 'nullable|string',
+            'status'           => 'nullable|in:pending,approved',
         ];
     }
 }

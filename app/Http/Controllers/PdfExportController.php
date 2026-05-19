@@ -20,10 +20,10 @@ class PdfExportController extends Controller
             'school',
             'schoolClass',
             'academicYear',
-            'createdBy',
+            'createdByUser',
         ])->findOrFail($id);
 
-        $this->authorize('certificateReplacementExport', $certificate);
+        $this->authorize('errorGenerateReport', $certificate);
 
         // منع تصدير PDF للطالب الموقوف
         if ($certificate->student?->isSuspended()) {
@@ -46,7 +46,7 @@ class PdfExportController extends Controller
             'school'       => $certificate->school,
             'schoolClass'  => $certificate->schoolClass,
             'academicYear' => $certificate->academicYear,
-            'createdBy'    => $certificate->createdBy,
+            'createdBy'    => $certificate->createdByUser,
             'printDate'    => now()->format('Y/m/d'),
         ])
             ->format('a4')
@@ -61,10 +61,10 @@ class PdfExportController extends Controller
             'toSchool',
             'schoolClass',
             'academicYear',
-            'createdBy',
+            'createdByUser',
         ])->where('type', 'transfer')->findOrFail($id);
 
-        $this->authorize('transferExport', $transfer);
+        $this->authorize('transfersAdmissionsGenerateReport', $transfer);
 
         // منع تصدير PDF للطالب الموقوف
         if ($transfer->student?->isSuspended()) {
@@ -84,7 +84,7 @@ class PdfExportController extends Controller
             'toSchool'     => $transfer->toSchool,
             'schoolClass'  => $transfer->schoolClass,
             'academicYear' => $transfer->academicYear,
-            'createdBy'    => $transfer->createdBy,
+            'createdBy'    => $transfer->createdByUser,
             'printDate'    => now()->format('Y/m/d'),
         ])
             ->format('a4')
@@ -100,10 +100,10 @@ class PdfExportController extends Controller
             'toSchool',
             'schoolClass',
             'academicYear',
-            'createdBy',
+            'createdByUser',
         ])->where('type', 'admission')->findOrFail($id);
 
-        $this->authorize('certificateReplacementExport', $admission);
+        $this->authorize('transfersAdmissionsGenerateReport', $admission);
 
         // منع تصدير PDF للطالب الموقوف
         if ($admission->student?->isSuspended()) {
@@ -123,7 +123,7 @@ class PdfExportController extends Controller
             'toSchool'     => $admission->toSchool,
             'schoolClass'  => $admission->schoolClass,
             'academicYear' => $admission->academicYear,
-            'createdBy'    => $admission->createdBy,
+            'createdBy'    => $admission->createdByUser,
             'printDate'    => now()->format('Y/m/d'),
         ])
             ->format('a4')
@@ -138,11 +138,9 @@ class PdfExportController extends Controller
     public function finalResult($id)
     {
         $finalResult = FinalResult::with([
-            'student.grades.subject',
-            'student.currentEnrollment.school',
-            'student.currentEnrollment.schoolClass',
-            'student.school',
-            'student.schoolClass',
+            'student',
+            'school',
+            'schoolClass',
             'academicYear',
         ])->findOrFail($id);
 
@@ -155,16 +153,17 @@ class PdfExportController extends Controller
             return response()->json(['message' => 'لا يمكن تصدير النتيجة النهائية لطالب موقوف'], 403);
         }
 
-        $enrollment = $student->currentEnrollment
-            ?? $student->enrollments()->latest()->first();
+        $school      = $finalResult->school;
+        $schoolClass = $finalResult->schoolClass;
 
-        $school      = $enrollment?->school      ?? $student->school;
-        $schoolClass = $enrollment?->schoolClass ?? $student->schoolClass;
-
-        // تجميع الدرجات مع بيانات المادة
-        $grades = $student->grades->mapWithKeys(function (Grade $grade) {
-            return [$grade->subject_id => $grade];
-        });
+        // تجميع الدرجات الخاصة بهذا العام فقط مع بيانات المادة
+        $grades = Grade::where('student_id', $student->id)
+            ->where('academic_year_id', $finalResult->academic_year_id)
+            ->with('subject')
+            ->get()
+            ->mapWithKeys(function (Grade $grade) {
+                return [$grade->subject_id => $grade];
+            });
 
         $subjects = $schoolClass?->subjects()->orderBy('id')->get() ?? collect();
 
@@ -183,5 +182,28 @@ class PdfExportController extends Controller
             ->format('a4')
             ->name($filename)
             ->download();
+    }
+
+    /**
+     * تصدير النتيجة النهائية للطالب بواسطة معرف الطالب والعام الدراسي
+     * GET /api/pdf/final-result/student/{studentId}/year/{yearId}
+     */
+    public function finalResultByStudent($studentId, $yearId)
+    {
+        $finalResult = FinalResult::where('student_id', $studentId)
+            ->where('academic_year_id', $yearId)
+            ->first();
+
+        if (!$finalResult) {
+            // Try to calculate it on the fly
+            $calculationService = app(\App\Services\ResultCalculationService::class);
+            $finalResult = $calculationService->calculateFinalResult($studentId, $yearId);
+        }
+
+        if (!$finalResult) {
+            return response()->json(['message' => 'لم يتم العثور على نتيجة لهذا الطالب في العام المحدد. يرجى التأكد من رصد الدرجات أولاً.'], 404);
+        }
+
+        return $this->finalResult($finalResult->id);
     }
 }

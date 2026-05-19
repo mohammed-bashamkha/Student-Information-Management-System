@@ -44,7 +44,8 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         'students_updated'    => 0,
         'enrollments_created' => 0,
         'errors'              => [],
-        'warnings'            => []
+        'warnings'            => [],
+        'processed_students'  => []
     ];
 
     public function __construct(int $academicYearId, int $classId, int $schoolId)
@@ -139,7 +140,7 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
                 // تحديث النتائج التلقائية بعد إدراج كل الدرجات
                 if (!empty($studentsToCalculate)) {
-                    $calcService = new ResultCalculationService();
+                    $calcService = app(ResultCalculationService::class);
                     foreach ($studentsToCalculate as $studentId) {
                         $calcService->calculateFinalResult($studentId, $this->academicYearId, $this->userId);
                     }
@@ -234,6 +235,13 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
 
         // معالجة النتيجة النهائية
         $this->collectFinalResult($studentId, $subjects, $row, $rowNumber, $finalResultsToUpsert, $studentsToCalculate);
+
+
+        $this->stats['processed_students'][] = [
+            'student_number' => $studentNumber,
+            'student_name'   => $studentName,
+            'status'         => $existingForCheck ? 'تحديث' : 'جديد'
+        ];
 
         if ($this->preview && count($this->previewData) < 5) {
             $this->previewData[] = [
@@ -413,7 +421,8 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
                     : 0
             ],
             'errors'   => $this->stats['errors'],
-            'warnings' => $this->stats['warnings']
+            'warnings' => $this->stats['warnings'],
+            'processed_students' => array_slice($this->stats['processed_students'], 0, 15)
         ];
     }
 

@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Exports\StudentErrorExport;
 use App\Services\ErrorServices\ErrorService;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Resources\ErrorResource;
+
 
 class ErrorController extends Controller
 {
@@ -19,25 +21,22 @@ class ErrorController extends Controller
     public function index(Request $request)
     {
         $errorsLog = $this->errorService->getErrors($request->all());
-        return response()->json([
-            'message' => 'تم جلب سجل التصحيحات بنجاح',
-            'data' => $errorsLog
-        ], 200);
+        return ErrorResource::collection($errorsLog)->additional([
+            'message' => 'تم جلب سجل التصحيحات بنجاح'
+        ]);
     }
 
     public function show(string $id)
     {
         $errorRecord = $this->errorService->getErrorById($id);
-        return response()->json([
-            'data' => $errorRecord
-        ], 200);
+        return new ErrorResource($errorRecord);
     }
     public function destroy(string $id)
     {
         $errorRecord = $this->errorService->deleteError($id);
         return response()->json([
-            'message' => 'تم حدف سجل خطاء بيانات الطالب بنجاح',
-            'data' => $errorRecord->student()->full_name
+            'message' => 'تم حذف سجل خطأ بيانات الطالب بنجاح',
+            'data' => $errorRecord->student->full_name
         ], 200);
     }
 

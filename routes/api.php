@@ -18,6 +18,9 @@ use App\Http\Controllers\SuspendedStudentController;
 use App\Http\Controllers\TransferAdmissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
+use App\Http\Controllers\StudentsDataExportController;
+use App\Http\Controllers\ErrorController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,7 +47,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/permissions', [RoleController::class, 'permissions']);
         Route::apiResource('/roles', RoleController::class);
         // academic year routes
-        Route::apiResource('/academic-year', AcademicYearController::class);
+        Route::apiResource('/academic-years', AcademicYearController::class);
         // levels route
         Route::get('/levels', [LevelController::class, 'index']);
         // schools routes
@@ -54,11 +57,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // school classes routes
         Route::apiResource('/school-classes', SchoolClassController::class);
         // grades routes — محمية: لا يمكن إضافة/تعديل درجة لطالب موقوف
+        Route::post('/grades/bulk', [GradeController::class, 'bulkStore'])
+            ->middleware(['student.not_suspended']);
+        Route::delete('/grades/bulk/{studentId}/{academicYearId}', [GradeController::class, 'bulkDestroy'])
+            ->middleware(['student.not_suspended']);
         Route::apiResource('/grades', GradeController::class)
             ->middleware(['student.not_suspended']);
-
-        // students route
-        Route::apiResource('/students', StudentController::class);
 
         // Import endpoints
         Route::get('/import/final-result', [FinalResultImportController::class, 'showImportForm']);
@@ -66,6 +70,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         
         Route::get('/students/import', [StudentsDataImportController::class, 'importForm']);
         Route::post('/students/import', [StudentsDataImportController::class, 'import']);
+
+        // Export endpoints
+        Route::get('/students/export/form', [StudentsDataExportController::class, 'exportForm']);
+        Route::post('/students/export', [StudentsDataExportController::class, 'export_students_data']);
+
+        // students route
+        Route::apiResource('/students', StudentController::class);
 
         // certificate replacements — محمية
         Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
@@ -89,12 +100,18 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('/transfer/{id}',                [PdfExportController::class, 'transfer'])->name('pdf.transfer');
             Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
             Route::get('/final-result/{id}',            [PdfExportController::class, 'finalResult'])->name('pdf.finalResult');
+            Route::get('/final-result/student/{studentId}/year/{yearId}', [PdfExportController::class, 'finalResultByStudent'])->name('pdf.finalResultByStudent');
         });
         // ===== Suspended Students (انتهاء القبول المؤقت) =====
         Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
         Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        // errors routes
+        Route::apiResource('/errors', ErrorController::class);
+        Route::post('/errors/export', [ErrorController::class, 'exportStudentErrors']);
+
     });
 
     Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');

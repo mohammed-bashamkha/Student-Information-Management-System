@@ -45,7 +45,15 @@ class GradePolicy
      */
     public function delete(User $user, Grade $grade): bool
     {
-        return $user->can(['الدرجات.حدف', 'الدرجات.ادارة']);
+        return $user->can(['الدرجات.حذف', 'الدرجات.ادارة']);
+    }
+
+    /**
+     * Determine whether the user can delete any models.
+     */
+    public function deleteAny(User $user): bool
+    {
+        return $user->can(['الدرجات.حذف', 'الدرجات.ادارة']);
     }
 
     /**
