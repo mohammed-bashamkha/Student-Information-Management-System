@@ -159,4 +159,110 @@ class GradeService
 
         return $grade;
     }
+
+    public function bulkSaveGrades(array $data)
+    {
+        $this->authorize('create', Grade::class);
+
+        $studentId = $data['student_id'];
+        $academicYearId = $data['academic_year_id'];
+        
+        // Find enrollment to get school and class
+        $enrollment = StudentEnrollment::where('student_id', $studentId)
+            ->where('academic_year_id', $academicYearId)
+            ->with('schoolClass.subjects')
+            ->first();
+
+        if (!$enrollment) {
+            throw ValidationException::withMessages([
+                'student_id' => 'الطالب غير مسجل في هذا العام الدراسي'
+            ]);
+        }
+
+        $classSubjectIds = $enrollment->schoolClass->subjects->pluck('id')->toArray();
+
+        $userId = Auth::id();
+
+        DB::transaction(function () use ($data, $enrollment, $userId, $studentId, $academicYearId, $classSubjectIds) {
+            foreach ($data['grades'] as $gradeData) {
+                // Ensure the subject actually belongs to the student's class
+                if (!in_array($gradeData['subject_id'], $classSubjectIds)) {
+                    continue;
+                }
+
+                $existingGrade = Grade::where([
+                    'student_id' => $studentId,
+                    'academic_year_id' => $academicYearId,
+                    'subject_id' => $gradeData['subject_id'],
+                ])->first();
+
+                // Safely extract values or preserve existing ones if omitted
+                $first = array_key_exists('first_semester', $gradeData) ? $gradeData['first_semester'] : ($existingGrade ? $existingGrade->first_semester_total : null);
+                $second = array_key_exists('second_semester', $gradeData) ? $gradeData['second_semester'] : ($existingGrade ? $existingGrade->second_semester_total : null);
+
+                // Skip if both are null and no existing grade
+                if ($first === null && $second === null && !$existingGrade) {
+                    continue;
+                }
+
+                $total = null;
+                if ($first !== null || $second !== null) {
+                    $total = (float)($first ?? 0) + (float)($second ?? 0);
+                }
+
+                Grade::updateOrCreate(
+                    [
+                        'student_id' => $studentId,
+                        'academic_year_id' => $academicYearId,
+                        'subject_id' => $gradeData['subject_id'],
+                    ],
+                    [
+                        'school_id' => $enrollment->school_id,
+                        'class_id' => $enrollment->class_id,
+                        'first_semester_total' => $first,
+                        'second_semester_total' => $second,
+                        'total' => $total,
+                        'created_by' => $userId,
+                    ]
+                );
+            }
+
+            // Calculate final result ONCE at the end
+            $this->resultCalculationService->calculateFinalResult($studentId, $academicYearId);
+        });
+
+        // Log the bulk action
+        $studentName = $enrollment->student->full_name ?? 'طالب';
+        $this->activityLogService->logAction(
+            'grades',
+            null,
+            'create', // Assuming this covers update too conceptually
+            "تم رصد مجموعة درجات للطالب: {$studentName} للعام الدراسي المختار"
+        );
+
+        return Grade::where('student_id', $studentId)
+            ->where('academic_year_id', $academicYearId)
+            ->get();
+    }
+
+    public function deleteGradesByStudentAndYear(string $studentId, string $academicYearId)
+    {
+        $this->authorize('deleteAny', Grade::class);
+
+        DB::transaction(function () use ($studentId, $academicYearId) {
+            Grade::where('student_id', $studentId)
+                ->where('academic_year_id', $academicYearId)
+                ->delete();
+
+            // Re-calculate final result (which might clear it or mark as missing)
+            $this->resultCalculationService->calculateFinalResult($studentId, $academicYearId);
+        });
+
+        $this->activityLogService->logAction(
+            'grades',
+            null,
+            'delete',
+            "تم حذف جميع درجات الطالب (ID: {$studentId}) للعام الدراسي (ID: {$academicYearId})"
+        );
+    }
 }

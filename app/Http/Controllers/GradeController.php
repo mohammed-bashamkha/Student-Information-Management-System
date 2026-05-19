@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GradeRequest\StoreGradeRequest;
 use App\Http\Requests\GradeRequest\UpdateGradeRequest;
+use App\Http\Requests\GradeRequest\BulkGradeRequest;
 use App\Services\GradeServices\GradeService;
 
 class GradeController extends Controller
@@ -50,5 +51,22 @@ class GradeController extends Controller
             'message' => 'تم حذف الدرجة بنجاح',
             'ID'      => $grade->id
         ]);
+    }
+
+    public function bulkStore(BulkGradeRequest $request)
+    {
+        $grades = $this->gradeService->bulkSaveGrades($request->validated());
+        return response()->json([
+            'message' => 'تم رصد درجات الطالب بنجاح',
+            'data' => $grades
+        ], 200);
+    }
+
+    public function bulkDestroy(string $studentId, string $academicYearId)
+    {
+        $this->gradeService->deleteGradesByStudentAndYear($studentId, $academicYearId);
+        return response()->json([
+            'message' => 'تم حذف جميع درجات الطالب لهذا العام بنجاح'
+        ], 200);
     }
 }
