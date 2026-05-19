@@ -28,7 +28,7 @@ class TransfersAdmission extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function createdBy()
+    public function createdByUser()
     {
         return $this->belongsTo(User::class, 'created_by');
     }

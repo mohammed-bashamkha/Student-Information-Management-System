@@ -39,7 +39,7 @@ class TransfersAdmissionPolicy
     {
         return $user->can('التحويلات_القبول.ادارة')
         || $user->can('التحويلات_القبول.تحديث')
-        && $user->id == $transfersAdmission->createdBy;
+        && $user->id == $transfersAdmission->created_by;
     }
 
     /**
@@ -49,7 +49,7 @@ class TransfersAdmissionPolicy
     {
         return $user->can('التحويلات_القبول.ادارة')
         || $user->can('التحويلات_القبول.حدف')
-        && $user->id == $transfersAdmission->createdBy;
+        && $user->id == $transfersAdmission->created_by;
     }
     
     public function transfersAdmissionsGenerateReport(User $user)

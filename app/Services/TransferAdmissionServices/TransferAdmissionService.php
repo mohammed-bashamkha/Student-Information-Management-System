@@ -25,7 +25,7 @@ class TransferAdmissionService
     public function getTransfersAdmissions(array $filters = [])
     {
         $this->authorize('viewAny', TransfersAdmission::class);
-        $query = TransfersAdmission::with(['student', 'fromSchool', 'toSchool', 'academicYear', 'user']);
+        $query = TransfersAdmission::with(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear', 'createdByUser']);
 
         if (!empty($filters['search'])) {
             $searchTerm = $filters['search'];
@@ -56,6 +56,12 @@ class TransferAdmissionService
         $this->authorize('create', TransfersAdmission::class);
 
         $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
+
+        if (!$student->currentEnrollment) {
+            throw ValidationException::withMessages([
+                'message' => "عفواً، لا يمكن إرسال طلب نقل لهذا الطالب لعدم وجود قيد أكاديمي نشط له حالياً."
+            ]);
+        }
 
         $existingRequest = TransfersAdmission::where('student_id', $student->id)
             ->where('type', 'transfer')
@@ -118,6 +124,12 @@ class TransferAdmissionService
         $this->authorize('create', TransfersAdmission::class);
 
         $student = Student::with('currentEnrollment')->findOrFail($data['student_id']);
+
+        if (!$student->currentEnrollment) {
+            throw ValidationException::withMessages([
+                'message' => "عفواً، لا يمكن إرسال طلب القبول المؤقت لعدم وجود قيد أكاديمي نشط للطالب حالياً."
+            ]);
+        }
 
         $existingRequest = TransfersAdmission::where('student_id', $student->id)
             ->where('type', 'admission')
@@ -221,7 +233,7 @@ class TransferAdmissionService
 
     public function getTransferAdmissionById($id)
     {
-        $transfer = TransfersAdmission::with(['student', 'fromSchool', 'toSchool', 'academicYear', 'user'])->findOrFail($id);
+        $transfer = TransfersAdmission::with(['student', 'fromSchool', 'toSchool', 'schoolClass', 'academicYear', 'createdByUser'])->findOrFail($id);
         $this->authorize('view', $transfer);
         return $transfer;
     }
