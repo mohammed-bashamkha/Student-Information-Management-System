@@ -26,13 +26,13 @@ class StudentService
         $this->authorize('viewAny', Student::class);
         $query = Student::query();
 
+        $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass', 'currentEnrollment.academicYear']);
+
         if (!empty($filters['academic_year_id'])) {
             $query->with(['enrollments' => function ($q) use ($filters) {
                 $q->where('academic_year_id', $filters['academic_year_id'])
                     ->with(['school', 'schoolClass']);
             }]);
-        } else {
-            $query->with(['currentEnrollment.school', 'currentEnrollment.schoolClass', 'currentEnrollment.academicYear']);
         }
 
         if (!empty($filters['search'])) {
@@ -110,7 +110,16 @@ class StudentService
 
     public function getStudentById($id)
     {
-        $student = Student::with(['enrollments.school', 'enrollments.schoolClass', 'enrollments.academicYear'])->findOrFail($id);
+        $student = Student::with([
+            'enrollments.school',
+            'enrollments.schoolClass',
+            'enrollments.academicYear',
+            'enrollments.student',
+            'currentEnrollment.school',
+            'currentEnrollment.schoolClass',
+            'currentEnrollment.academicYear',
+            'currentEnrollment.student',
+        ])->findOrFail($id);
         $this->authorize('view', $student);
         return $student;
     }
@@ -121,6 +130,8 @@ class StudentService
         $this->authorize('update', $student);
 
         DB::transaction(function () use ($student, $validatedData) {
+            $student->load('currentEnrollment');
+
             $fieldsToTrack = [
                 'full_name',
                 'school_number',
@@ -133,18 +144,26 @@ class StudentService
             ];
 
             foreach ($fieldsToTrack as $field) {
-                // For fields in data array, check if they are different from current student values
-                if (isset($data[$field]) && $validatedData[$field] != $student->$field && $validatedData[$field] != null) {
+                $oldValue = $student->$field;
+                $newValue = $validatedData[$field] ?? null;
+
+                // Handle fields that belong to enrollment
+                if ($field === 'school_id' || $field === 'class_id') {
+                    $oldValue = $student->currentEnrollment?->$field;
+                }
+
+                // Check if the value has changed
+                if ($newValue !== null && $newValue != $oldValue) {
                     Error::create([
                         'student_id'       => $student->id,
                         'field_name'       => $field,
-                        'old_value'        => $student->$field,
-                        'new_value'        => $validatedData[$field],
-                        'academic_year_id' => $validatedData['academic_year_id'] ?? null,
+                        'old_value'        => $oldValue,
+                        'new_value'        => $newValue,
+                        'academic_year_id' => $validatedData['academic_year_id'],
                         'reason'           => $validatedData['reason'] ?? 'تعديل بيانات',
-                        'school_id'        => $validatedData['school_id'] ?? null,
-                        'class_id'         => $validatedData['class_id'] ?? null,
-                        'created_by'       => Auth::id(),
+                        'school_id'        => $validatedData['school_id'],
+                        'class_id'         => $validatedData['class_id'],
+                        'createdBy'        => Auth::id(),
                     ]);
                 }
             }
@@ -156,6 +175,7 @@ class StudentService
                 'nationality',
                 'gender',
                 'date_of_birth',
+                'place_of_birth',
                 'registration_date'
             ])->toArray());
 

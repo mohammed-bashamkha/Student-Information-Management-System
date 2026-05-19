@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StudentRequest\StoreStudentWithEnrollmentRequest;
 use App\Http\Requests\StudentRequest\UpdateStudentWithEnrollmentRequest;
+use App\Http\Resources\Student\StudentResource;
 use App\Services\StudentServices\StudentService;
 use Illuminate\Http\Request;
 
@@ -19,7 +20,7 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         $students = $this->studentService->getStudents($request->all());
-        return response()->json($students, 200);
+        return StudentResource::collection($students);
     }
 
     public function store(StoreStudentWithEnrollmentRequest $request)
@@ -28,7 +29,7 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'تم اضافة الطالب بنجاح',
-            'data' => $result['student'],
+            'data' => new StudentResource($result['student']),
             'school_enrollment' => $result['enrollment']->school->name,
             'class_enrollment' => $result['enrollment']->schoolClass->name
         ], 201);
@@ -40,7 +41,7 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'تم جلب بيانات الطالب بنجاح',
-            'data' => $student
+            'data' => new StudentResource($student)
         ], 200);
     }
 
@@ -50,7 +51,7 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'تم تعديل بيانات الطالب والتسجيل بنجاح',
-            'data' => $student
+            'data' => new StudentResource($student)
         ], 200);
     }
 
@@ -60,7 +61,7 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'تم حذف الطالب بنجاح',
-            'data' => $student->only('school_number', 'full_name')
+            'data' => new StudentResource($student)
         ], 200);
     }
 }

@@ -40,6 +40,11 @@ class Student extends Model
         return $this->hasMany(CertificateReplacement::class);
     }
 
+    public function errors()
+    {
+        return $this->hasMany(Error::class);
+    }
+
     public function enrollments()
     {
         return $this->hasMany(StudentEnrollment::class);
