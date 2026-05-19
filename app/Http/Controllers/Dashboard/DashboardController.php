@@ -27,9 +27,11 @@ class DashboardController extends Controller
         $certificateReplacements = CertificateReplacement::count();
         $activeAcademicYear = AcademicYear::where('status','active')->first();
 
-        $expiredAdmissions = Student::whereHas('currentEnrollment', function ($q) {
-            $q->where('status', 'suspended');
-        })->count();
+        $expiredAdmissions = TransfersAdmission::where('type', 'admission')
+            ->where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', now())
+            ->count();
 
         $studentDensityAlerts = School::withCount('enrollments')
             ->where('capacity', '>', 0)
@@ -46,10 +48,28 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
-        $recentActivities = Activity::with('causer')->latest()->take(5)->get()->map(function ($log) {
+        $recentActivities = Activity::with(['causer', 'subject'])->latest()->take(5)->get()->map(function ($log) {
+            $desc = $log->description;
+            
+            if ($log->subject_type === 'App\Models\TransfersAdmission' && $log->subject) {
+                $studentName = $log->subject->student ? $log->subject->student->full_name : 'الطالب';
+                $opType = $log->subject->type === 'admission' ? 'القبول المؤقت' : 'التحويل الداخلي';
+                
+                // If it's a status change log
+                if (str_contains($desc, 'تغيير حالة الطلب من')) {
+                    $statusMap = ['pending' => 'قيد الانتظار', 'approved' => 'مقبول', 'rejected' => 'مرفوض'];
+                    $desc = strtr($desc, $statusMap);
+                    $desc = str_replace('تغيير حالة الطلب', "تغيير حالة طلب {$opType} لـ {$studentName}", $desc);
+                } 
+                // If it's a delete log without student name
+                elseif (str_contains($desc, 'تم حذف طلب')) {
+                    $desc = "تم حذف طلب {$opType} لـ {$studentName}";
+                }
+            }
+
             return [
                 'id' => $log->id,
-                'description' => $log->description,
+                'description' => $desc,
                 'user' => $log->causer ? $log->causer->name : 'النظام',
                 'time' => $log->created_at->format('Y-m-d h:i A'),
                 'type' => $log->event ?? $log->log_name,
@@ -70,7 +90,7 @@ class DashboardController extends Controller
             ],
             'needs_attention' => [
                 'transfers_awaiting_review' => $transferPending,
-                'expired_temporary_admissions' => $expiredAdmissions,
+                'expired_temporary_admissions' => $admissionPending,
                 'incomplete_files' => 7, // TODO: Replace with dynamic query when file logic is added
             ],
             'student_density_alerts' => $studentDensityAlerts,
