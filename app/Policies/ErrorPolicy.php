@@ -30,7 +30,7 @@ class ErrorPolicy
     public function delete(User $user, Error $error): bool
     {
         return $user->can('الاخطاء.ادارة')
-        || $user->can('الاخطاء.حدف')
+        || $user->can('الاخطاء.حذف')
         && $user->id === $error->createdBy;
     }
 
