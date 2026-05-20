@@ -78,6 +78,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // students route
         Route::apiResource('/students', StudentController::class);
 
+        // final results route
+        Route::get('/final-results', [FinalResultController::class, 'index']);
+
         // certificate replacements — محمية
         Route::apiResource('/certificate-replacements', CertificateReplacementController::class)
             ->only(['store', 'update'])
