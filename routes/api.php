@@ -20,6 +20,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\StudentsDataExportController;
 use App\Http\Controllers\ErrorController;
+use App\Http\Controllers\ReportsController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -114,6 +115,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // errors routes
         Route::apiResource('/errors', ErrorController::class);
         Route::post('/errors/export', [ErrorController::class, 'exportStudentErrors']);
+
+        // Reports Routes
+        Route::prefix('reports')->group(function () {
+            Route::get('/students', [ReportsController::class, 'studentsReport']);
+            Route::get('/schools', [ReportsController::class, 'schoolsReport']);
+            Route::get('/transfers', [ReportsController::class, 'transfersAdmissionsReport']);
+            Route::get('/results', [ReportsController::class, 'finalResultsReport']);
+        });
 
     });
 

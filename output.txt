@@ -1,0 +1,305 @@
+# Entity Relationship Diagram
+
+## Entities
+
+### AcademicYear (`App\Models\AcademicYear`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `year` (varchar)
+- `start_date` (date)
+- `end_date` (date)
+- `status` (enum)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### CertificateReplacement (`App\Models\CertificateReplacement`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `student_image` (varchar)
+- `student_id` (bigint)
+- `school_id` (bigint)
+- `class_id` (bigint)
+- `academic_year_id` (bigint)
+- `certificate_type` (varchar)
+- `notes` (text)
+- `request_date` (date)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Error (`App\Models\Error`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `student_id` (bigint)
+- `field_name` (varchar)
+- `old_value` (text)
+- `new_value` (text)
+- `reason` (varchar)
+- `academic_year_id` (bigint)
+- `school_id` (bigint)
+- `class_id` (bigint)
+- `createdBy` (bigint)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### FinalResult (`App\Models\FinalResult`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `student_id` (bigint)
+- `academic_year_id` (bigint)
+- `school_id` (bigint)
+- `class_id` (bigint)
+- `total_student_grades` (decimal)
+- `average_grade` (decimal)
+- `final_result` (varchar)
+- `notes` (text)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Grade (`App\Models\Grade`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `student_id` (bigint)
+- `subject_id` (bigint)
+- `academic_year_id` (bigint)
+- `school_id` (bigint)
+- `class_id` (bigint)
+- `first_semester_total` (decimal)
+- `second_semester_total` (decimal)
+- `total` (decimal)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Level (`App\Models\Level`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `name` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### School (`App\Models\School`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `name` (varchar)
+- `school_type` (enum)
+- `capacity` (int)
+- `address` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### SchoolClass (`App\Models\SchoolClass`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `level_id` (bigint)
+- `name` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Student (`App\Models\Student`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `school_number` (varchar)
+- `seat_number` (varchar)
+- `full_name` (varchar)
+- `nationality` (varchar)
+- `gender` (enum)
+- `date_of_birth` (date)
+- `place_of_birth` (varchar)
+- `registration_date` (date)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### StudentEnrollment (`App\Models\StudentEnrollment`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `student_id` (bigint)
+- `school_id` (bigint)
+- `class_id` (bigint)
+- `academic_year_id` (bigint)
+- `status` (enum)
+- `enrollment_date` (date)
+- `created_by` (bigint)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Subject (`App\Models\Subject`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `level_id` (bigint)
+- `name` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### TransfersAdmission (`App\Models\TransfersAdmission`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `created_by` (bigint)
+- `type` (enum)
+- `student_id` (bigint)
+- `from_school_id` (bigint)
+- `from_external_school_name` (text)
+- `to_school_id` (bigint)
+- `class_id` (bigint)
+- `academic_year_id` (bigint)
+- `request_date` (date)
+- `start_date` (date)
+- `end_date` (date)
+- `based_on` (varchar)
+- `approval_date` (date)
+- `reason` (text)
+- `status` (enum)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### User (`App\Models\User`)
+
+#### Attributes:
+
+- `id` (bigint)
+- `name` (varchar)
+- `email` (varchar)
+- `email_verified_at` (timestamp)
+- `password` (varchar)
+- `must_change_password` (tinyint)
+- `remember_token` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+## Relationships
+
+### AcademicYear Relationships
+
+- **HasMany** `grades` to Grade (Local Key: `id`, Foreign Key: `academic_year_id`)
+- **HasMany** `finalResults` to FinalResult (Local Key: `id`, Foreign Key: `academic_year_id`)
+- **HasMany** `enrollments` to StudentEnrollment (Local Key: `id`, Foreign Key: `academic_year_id`)
+
+### CertificateReplacement Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `createdBy` to User (Local Key: `created_by`, Foreign Key: `id`)
+
+### Error Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `createdBy` to User (Local Key: `created_by_id`, Foreign Key: `id`)
+
+### FinalResult Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `createdBy` to User (Local Key: `created_by`, Foreign Key: `id`)
+
+### Grade Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `subject` to Subject (Local Key: `subject_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `createdBy` to User (Local Key: `created_by`, Foreign Key: `id`)
+
+### Level Relationships
+
+- **HasMany** `classes` to SchoolClass (Local Key: `id`, Foreign Key: `level_id`)
+- **HasMany** `subjects` to Subject (Local Key: `id`, Foreign Key: `level_id`)
+
+### School Relationships
+
+- **HasMany** `students` to Student (Local Key: `id`, Foreign Key: `school_id`)
+- **HasMany** `certificateReplacements` to CertificateReplacement (Local Key: `id`, Foreign Key: `school_id`)
+- **HasMany** `transfersFrom` to TransfersAdmission (Local Key: `id`, Foreign Key: `from_school_id`)
+- **HasMany** `transfersTo` to TransfersAdmission (Local Key: `id`, Foreign Key: `to_school_id`)
+- **HasMany** `enrollments` to StudentEnrollment (Local Key: `id`, Foreign Key: `school_id`)
+
+### SchoolClass Relationships
+
+- **HasManyThrough** `students` to Student (Local Key: ``, Foreign Key: ``)
+- **BelongsTo** `level` to Level (Local Key: `level_id`, Foreign Key: `id`)
+- **BelongsToMany** `subjects` to Subject (Local Key: ``, Foreign Key: ``)
+- **HasMany** `enrollments` to StudentEnrollment (Local Key: `id`, Foreign Key: `school_class_id`)
+- **HasMany** `certificateReplacements` to CertificateReplacement (Local Key: `id`, Foreign Key: `school_class_id`)
+
+### Student Relationships
+
+- **HasMany** `grades` to Grade (Local Key: `id`, Foreign Key: `student_id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **HasOne** `finalResult` to FinalResult (Local Key: `id`, Foreign Key: `student_id`)
+- **HasMany** `transfers` to TransfersAdmission (Local Key: `id`, Foreign Key: `student_id`)
+- **HasMany** `certificateReplacements` to CertificateReplacement (Local Key: `id`, Foreign Key: `student_id`)
+- **HasMany** `errors` to Error (Local Key: `id`, Foreign Key: `student_id`)
+- **HasMany** `enrollments` to StudentEnrollment (Local Key: `id`, Foreign Key: `student_id`)
+- **HasOne** `currentEnrollment` to StudentEnrollment (Local Key: `id`, Foreign Key: `student_id`)
+
+### StudentEnrollment Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `school` to School (Local Key: `school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `createdBy` to User (Local Key: `created_by`, Foreign Key: `id`)
+
+### Subject Relationships
+
+- **HasMany** `grades` to Grade (Local Key: `id`, Foreign Key: `subject_id`)
+- **BelongsTo** `level` to Level (Local Key: `level_id`, Foreign Key: `id`)
+- **BelongsToMany** `schoolClasses` to SchoolClass (Local Key: ``, Foreign Key: ``)
+
+### TransfersAdmission Relationships
+
+- **BelongsTo** `student` to Student (Local Key: `student_id`, Foreign Key: `id`)
+- **BelongsTo** `fromSchool` to School (Local Key: `from_school_id`, Foreign Key: `id`)
+- **BelongsTo** `toSchool` to School (Local Key: `to_school_id`, Foreign Key: `id`)
+- **BelongsTo** `schoolClass` to SchoolClass (Local Key: `class_id`, Foreign Key: `id`)
+- **BelongsTo** `academicYear` to AcademicYear (Local Key: `academic_year_id`, Foreign Key: `id`)
+- **BelongsTo** `createdByUser` to User (Local Key: `created_by`, Foreign Key: `id`)
+
+### User Relationships
+
+- **HasMany** `schools` to School (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `levels` to Level (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `classes` to SchoolClass (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `subjects` to Subject (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `students` to Student (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `grades` to Grade (Local Key: `id`, Foreign Key: `created_by`)
+- **HasMany** `finalResults` to FinalResult (Local Key: `id`, Foreign Key: `created_by`)
+

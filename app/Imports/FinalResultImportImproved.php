@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Events\AfterImport;
 use Maatwebsite\Excel\Events\BeforeImport;
+use Maatwebsite\Excel\Events\BeforeSheet;
 
 /**
  * نسخة محسّنة لاستيراد النتائج النهائية مع معالجة أخطاء أفضل وتقارير مفصلة
@@ -28,6 +29,11 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     protected $classId;
     protected $schoolId;
     protected $userId;
+
+    /**
+     * الجنس المستنتج من اسم الـ sheet (male | female | null)
+     */
+    protected ?string $gender = null;
 
     public $preview = false;
     public $previewData = [];
@@ -183,9 +189,14 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
         // إنشاء أو تحديث الطالب
         if ($existingForCheck) {
             if (!$this->preview) {
-                $existingForCheck->update([
-                    'full_name'  => $studentName,
-                ]);
+                $updateData = ['full_name' => $studentName];
+
+                // تحديث الجنس فقط إذا تم استنتاجه من اسم الـ sheet
+                if ($this->gender !== null) {
+                    $updateData['gender'] = $this->gender;
+                }
+
+                $existingForCheck->update($updateData);
             }
             $studentId = $existingForCheck->id;
             $this->stats['students_updated']++;
@@ -193,8 +204,9 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
             if (!$this->preview) {
                 $newStudent = Student::create([
                     'school_number' => $studentNumber,
-                    'full_name'  => $studentName,
-                    'created_by' => $this->userId,
+                    'full_name'     => $studentName,
+                    'gender'        => $this->gender,   // من اسم الـ sheet
+                    'created_by'    => $this->userId,
                 ]);
                 $studentId = $newStudent->id;
             } else {
@@ -427,17 +439,41 @@ class FinalResultImportImproved implements ToCollection, WithStartRow, WithEvent
     }
 
     /**
-     * التسجيل قبل وبعد الاستيراد
+     * استنتاج الجنس من اسم الـ sheet
+     * - يحتوي على "الطلاب"  → male
+     * - يحتوي على "الطالبات" → female
+     * - غير ذلك             → null (لا تغيير)
+     */
+    private function resolveGenderFromSheetName(string $sheetName): ?string
+    {
+        if (str_contains($sheetName, 'الطالبات')) {
+            return 'female';
+        }
+
+        if (str_contains($sheetName, 'الطلاب')) {
+            return 'male';
+        }
+
+        return null;
+    }
+
+    /**
+     * تسجيل أحداث الاستيراد لاكتشاف اسم الـ sheet
      */
     public function registerEvents(): array
     {
         return [
+            BeforeSheet::class => function (BeforeSheet $event) {
+                $sheetTitle = $event->getSheet()->getTitle();
+                $this->gender = $this->resolveGenderFromSheetName($sheetTitle);
+            },
+
             BeforeImport::class => function (BeforeImport $event) {
                 Log::info('بدء استيراد النتائج النهائية', [
                     'academic_year_id' => $this->academicYearId,
-                    'class_id' => $this->classId,
-                    'school_id' => $this->schoolId,
-                    'user_id' => $this->userId
+                    'class_id'         => $this->classId,
+                    'school_id'        => $this->schoolId,
+                    'user_id'          => $this->userId,
                 ]);
             },
 

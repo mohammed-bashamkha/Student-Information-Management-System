@@ -14,9 +14,9 @@ class GradeController extends Controller
     {
         $this->gradeService = $gradeService;
     }
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $grades = $this->gradeService->getGrades();
+        $grades = $this->gradeService->getGrades($request->all());
         return response()->json($grades);
     }
 

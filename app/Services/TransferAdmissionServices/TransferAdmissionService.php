@@ -44,6 +44,20 @@ class TransferAdmissionService
         if (!empty($filters['to_school_id'])) {
             $query->where('to_school_id', $filters['to_school_id']);
         }
+        if (!empty($filters['school_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('from_school_id', $filters['school_id'])
+                  ->orWhere('to_school_id', $filters['school_id']);
+            });
+        }
+        if (!empty($filters['class_id'])) {
+            $query->where('class_id', $filters['class_id']);
+        }
+        if (!empty($filters['gender'])) {
+            $query->whereHas('student', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
+            });
+        }
         if (!empty($filters['academic_year_id'])) {
             $query->where('academic_year_id', $filters['academic_year_id']);
         }

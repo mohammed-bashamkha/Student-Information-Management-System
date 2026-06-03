@@ -47,7 +47,7 @@ class StudentService
             });
         }
 
-        if (!empty($filters['academic_year_id']) || !empty($filters['school_id']) || !empty($filters['class_id'])) {
+        if (!empty($filters['academic_year_id']) || !empty($filters['school_id']) || !empty($filters['class_id']) || !empty($filters['status'])) {
             $query->whereHas('enrollments', function ($q) use ($filters) {
                 if (!empty($filters['academic_year_id'])) {
                     $q->where('academic_year_id', $filters['academic_year_id']);
@@ -58,7 +58,14 @@ class StudentService
                 if (!empty($filters['class_id'])) {
                     $q->where('class_id', $filters['class_id']);
                 }
+                if (!empty($filters['status'])) {
+                    $q->where('status', $filters['status']);
+                }
             });
+        }
+
+        if (!empty($filters['gender'])) {
+            $query->where('gender', $filters['gender']);
         }
 
         return $query->orderBy('id', 'desc')->paginate(10);
@@ -153,7 +160,7 @@ class StudentService
                 }
 
                 // Check if the value has changed
-                if ($newValue !== null && $newValue != $oldValue) {
+                if ($newValue !== null && $newValue != $oldValue && $oldValue !== null) {
                     Error::create([
                         'student_id'       => $student->id,
                         'field_name'       => $field,

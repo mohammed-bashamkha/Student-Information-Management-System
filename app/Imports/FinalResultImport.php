@@ -11,14 +11,21 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\BeforeSheet;
 use Illuminate\Support\Facades\DB;
 
-class FinalResultImport implements ToCollection, WithStartRow
+class FinalResultImport implements ToCollection, WithStartRow, WithEvents
 {
     protected $academicYearId;
     protected $classId;
     protected $schoolId;
     protected $userId;
+
+    /**
+     * الجنس المستنتج من اسم الـ sheet (male | female | null)
+     */
+    protected ?string $gender = null;
 
     private $subjectsCache = [];
 
@@ -52,12 +59,19 @@ class FinalResultImport implements ToCollection, WithStartRow
                     continue;
                 }
 
+                $studentData = [
+                    'full_name'  => $studentName,
+                    'created_by' => $this->userId,
+                ];
+
+                // تعيين الجنس إذا تم استنتاجه من اسم الـ sheet
+                if ($this->gender !== null) {
+                    $studentData['gender'] = $this->gender;
+                }
+
                 $student = Student::updateOrCreate(
                     ['school_number' => $studentNumber],
-                    [
-                        'full_name'  => $studentName,
-                        'created_by' => $this->userId,
-                    ]
+                    $studentData
                 );
 
                 // تخطي الطالب إذا كان موقوفاً
@@ -107,6 +121,38 @@ class FinalResultImport implements ToCollection, WithStartRow
                 );
             }
         });
+    }
+
+    /**
+     * استنتاج الجنس من اسم الـ sheet
+     * - يحتوي على "الطلاب"  → male
+     * - يحتوي على "الطالبات" → female
+     * - غير ذلك             → null (لا تغيير)
+     */
+    private function resolveGenderFromSheetName(string $sheetName): ?string
+    {
+        if (str_contains($sheetName, 'الطالبات')) {
+            return 'female';
+        }
+
+        if (str_contains($sheetName, 'الطلاب')) {
+            return 'male';
+        }
+
+        return null;
+    }
+
+    /**
+     * تسجيل أحداث الاستيراد لاكتشاف اسم الـ sheet
+     */
+    public function registerEvents(): array
+    {
+        return [
+            BeforeSheet::class => function (BeforeSheet $event) {
+                $sheetName = $event->getSheet()->getTitle();
+                $this->gender = $this->resolveGenderFromSheetName($sheetName);
+            },
+        ];
     }
 
     private function getSubjectsForClass(int $classId): Collection

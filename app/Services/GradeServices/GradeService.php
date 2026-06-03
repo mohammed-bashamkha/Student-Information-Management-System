@@ -24,11 +24,28 @@ class GradeService
         $this->activityLogService = $activityLogService;
     }
 
-    public function getGrades()
+    public function getGrades(array $filters = [])
     {
         $this->authorize('viewAny', Grade::class);
-        $grades = Grade::with(['student', 'subject', 'academicYear'])->get();
-        return $grades;
+        $query = Grade::with(['student', 'subject', 'academicYear']);
+
+        if (!empty($filters['academic_year_id'])) {
+            $query->where('academic_year_id', $filters['academic_year_id']);
+        }
+
+        if (!empty($filters['school_id'])) {
+            $query->where('school_id', $filters['school_id']);
+        }
+
+        if (!empty($filters['class_id'])) {
+            $query->where('class_id', $filters['class_id']);
+        }
+
+        if (!empty($filters['student_ids']) && is_array($filters['student_ids'])) {
+            $query->whereIn('student_id', $filters['student_ids']);
+        }
+
+        return $query->get();
     }
 
     public function storeGrade(array $validateData)
