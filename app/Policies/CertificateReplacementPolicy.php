@@ -52,7 +52,7 @@ class CertificateReplacementPolicy
         && $user->id == $certificateReplacement->createdBy;
     }
 
-    public function errorGenerateReport(User $user)
+    public function generateReport(User $user)
     {
         return $user->can(['بدل_فاقد.ادارة','بدل_فاقد.توليد_تقارير']);
     }

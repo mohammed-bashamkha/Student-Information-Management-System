@@ -20,10 +20,10 @@ class PdfExportController extends Controller
             'school',
             'schoolClass',
             'academicYear',
-            'createdByUser',
+            'createdBy',
         ])->findOrFail($id);
 
-        $this->authorize('errorGenerateReport', $certificate);
+        $this->authorize('generateReport', $certificate);
 
         // منع تصدير PDF للطالب الموقوف
         if ($certificate->student?->isSuspended()) {
@@ -46,7 +46,7 @@ class PdfExportController extends Controller
             'school'       => $certificate->school,
             'schoolClass'  => $certificate->schoolClass,
             'academicYear' => $certificate->academicYear,
-            'createdBy'    => $certificate->createdByUser,
+            'createdBy'    => $certificate->createdBy,
             'printDate'    => now()->format('Y/m/d'),
         ])
             ->format('a4')

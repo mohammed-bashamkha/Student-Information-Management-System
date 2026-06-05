@@ -196,7 +196,7 @@ return [
         'mobile'                => 'الجوال',
         'age'                   => 'العمر',
         'sex'                   => 'الجنس',
-        'gender'                => 'النوع',
+        'gender'                => 'النوع/الجنس',
         'day'                   => 'اليوم',
         'month'                 => 'الشهر',
         'year'                  => 'السنة',
@@ -215,7 +215,44 @@ return [
         'title'                 => 'العنوان',
         'q'                     => 'البحث',
         'link'                  => 'رابط',
-        // 'slug'                  => ' ',
+        
+        // Student Fields
+        'school_number'         => 'الرقم المدرسي',
+        'seat_number'           => 'رقم الجلوس',
+        'full_name'             => 'الاسم الرباعي',
+        'nationality'           => 'الجنسية',
+        'date_of_birth'         => 'تاريخ الميلاد',
+        'place_of_birth'        => 'مكان الميلاد',
+        'registration_date'     => 'تاريخ التسجيل',
+        'school_id'             => 'المدرسة',
+        'class_id'              => 'الصف',
+        'academic_year_id'      => 'العام الدراسي',
+        'reason'                => 'سبب التعديل',
+        
+        // School Fields
+        'school_type'           => 'نوع المدرسة',
+        'capacity'              => 'السعة الاستيعابية',
+        
+        // Users & Roles
+        'role'                  => 'الصلاحية',
+        'roles'                 => 'الصلاحيات',
+        'permissions'           => 'الأذونات',
+        
+        // General
+        'status'                => 'الحالة',
+        'type'                  => 'النوع',
+        'notes'                 => 'الملاحظات',
+        
+        // Transfers & Replacements
+        'current_password'      => 'كلمة المرور الحالية',
+        'new_password'          => 'كلمة المرور الجديدة',
+        'start_date'            => 'تاريخ البداية',
+        'end_date'              => 'تاريخ النهاية',
+        'certificate_type'      => 'نوع الشهادة',
+        'request_date'          => 'تاريخ الطلب',
+        'student_image'         => 'صورة الطالب',
+        'from_external_school_name' => 'المدرسة الخارجية',
+        'to_school_id'          => 'المدرسة الموجه إليها',
     ],
 
 ];

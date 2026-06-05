@@ -23,7 +23,7 @@ class RegisterStudentWithTransferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name' => 'required|string|max:255',
+            'full_name' => ['required', 'string', 'regex:/^(\S+\s){3,}\S+$/'],
             'school_number' => 'required|string|max:50',
             'seat_number' => 'required|string|max:50',
             'gender' => 'required|in:male,female',
