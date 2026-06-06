@@ -100,7 +100,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             ->middleware(['student.not_suspended']);
 
         // ===== PDF Export Routes =====
-        Route::prefix('pdf')->group(function () {
+        Route::prefix('pdf')->middleware('cacheResponse:86400')->group(function () {
             Route::get('/certificate-replacement/{id}', [PdfExportController::class, 'certificateReplacement'])->name('pdf.certificate');
             Route::get('/transfer/{id}',                [PdfExportController::class, 'transfer'])->name('pdf.transfer');
             Route::get('/admission/{id}',               [PdfExportController::class, 'admission'])->name('pdf.admission');
@@ -111,14 +111,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
         Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
 
-        Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('cacheResponse:300');
 
         // errors routes
         Route::apiResource('/errors', ErrorController::class);
         Route::post('/errors/export', [ErrorController::class, 'exportStudentErrors']);
 
         // Reports Routes
-        Route::prefix('reports')->group(function () {
+        Route::prefix('reports')->middleware('cacheResponse:300')->group(function () {
             Route::get('/students', [ReportsController::class, 'studentsReport']);
             Route::get('/schools', [ReportsController::class, 'schoolsReport']);
             Route::get('/transfers', [ReportsController::class, 'transfersAdmissionsReport']);

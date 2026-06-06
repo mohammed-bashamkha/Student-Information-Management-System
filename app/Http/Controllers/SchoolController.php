@@ -7,14 +7,24 @@ use App\Http\Requests\SchoolRequest\UpdateSchoolRequest;
 use App\Services\SchoolServices\SchoolService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\ResponseCache\Facades\ResponseCache;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SchoolController extends Controller
+class SchoolController extends Controller implements HasMiddleware
 {
     protected $schoolService;
 
     public function __construct(SchoolService $schoolService)
     {
         $this->schoolService = $schoolService;
+    }
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('cacheResponse:86400', only: ['index', 'show']),
+        ];
     }
 
     public function index(Request $request): JsonResponse
@@ -35,6 +45,7 @@ class SchoolController extends Controller
     {
         $validateData = $request->validated();
         $school = $this->schoolService->storeSchool($validateData);
+        ResponseCache::clear();
         return response()->json([
             'message' => 'تم اضافة المدرسة بنجاح',
             'data' => $school
@@ -45,6 +56,7 @@ class SchoolController extends Controller
     {
         $validateData = $request->validated();
         $school = $this->schoolService->updateSchool($validateData, $id);
+        ResponseCache::clear();
         return response()->json([
             'message' => 'تم تعديل المدرسة بنجاح',
             'data' => $school
@@ -55,6 +67,7 @@ class SchoolController extends Controller
     {
         try {
             $school = $this->schoolService->deleteSchool($id);
+            ResponseCache::clear();
             return response()->json([
                 'message' => 'تم حذف المدرسة بنجاح',
                 'data' => $school

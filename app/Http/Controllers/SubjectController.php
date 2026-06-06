@@ -8,13 +8,23 @@ use App\Services\SubjectServices\SubjectService;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\ResponseCache\Facades\ResponseCache;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SubjectController extends Controller
+class SubjectController extends Controller implements HasMiddleware
 {
     protected $subjectService;
     public function __construct(SubjectService $subjectService)
     {
         $this->subjectService = $subjectService;
+    }
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('cacheResponse:86400', only: ['index', 'show']),
+        ];
     }
     public function index(Request $request): JsonResponse
     {
@@ -26,6 +36,7 @@ class SubjectController extends Controller
     {
         $validateData = $request->validated();
         $subject = $this->subjectService->storeSubject($validateData);
+        ResponseCache::clear();
         return response()->json([
             'message' => 'تم انشاء المادة الدراسية بنجاح',
             'data' => $subject->load(['schoolClasses', 'level'])
@@ -42,6 +53,7 @@ class SubjectController extends Controller
     {
         $validateData = $request->validated();
         $subject = $this->subjectService->updateSubject($validateData, $id);
+        ResponseCache::clear();
 
         return response()->json([
             'message' => 'تم تعديل المادة الدراسية بنجاح',
@@ -53,6 +65,7 @@ class SubjectController extends Controller
     {
         try {
             $subject = $this->subjectService->deleteSubject($id);
+            ResponseCache::clear();
             return response()->json([
                 'message' => 'تم حذف المادة الدراسية بنجاح',
                 'data' => $subject->name

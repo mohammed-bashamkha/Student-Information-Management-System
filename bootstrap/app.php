@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'student.not_suspended' => \App\Http\Middleware\EnsureStudentNotSuspended::class,
             'must_change_password' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
+            'cacheResponse' => \Spatie\ResponseCache\Middlewares\CacheResponse::class,
+            'doNotCacheResponse' => \Spatie\ResponseCache\Middlewares\DoNotCacheResponse::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
