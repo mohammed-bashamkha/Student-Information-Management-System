@@ -13,7 +13,7 @@ class ErrorPolicy
      */
     public function viewAny(User $user): bool
     {
-       return $user->can(['الاخطاء.عرض','الاخطاء.ادارة']);
+       return $user->hasAnyPermission(['الاخطاء.عرض', 'الاخطاء.ادارة']);
     }
 
     /**
@@ -21,7 +21,7 @@ class ErrorPolicy
      */
     public function view(User $user, Error $error): bool
     {
-        return $user->can(['الاخطاء.عرض','الاخطاء.ادارة']);
+        return $user->hasAnyPermission(['الاخطاء.عرض', 'الاخطاء.ادارة']);
     }
 
     /**
@@ -30,12 +30,11 @@ class ErrorPolicy
     public function delete(User $user, Error $error): bool
     {
         return $user->can('الاخطاء.ادارة')
-        || $user->can('الاخطاء.حذف')
-        && $user->id === $error->createdBy;
+        || ($user->can('الاخطاء.حذف') && $user->id === $error->created_by);
     }
 
-    public function errorGenerateReport(User $user)
+    public function errorGenerateReport(User $user): bool
     {
-        return $user->can(['الاخطاء.ادارة','الاخطاء.توليد_تقارير']);
+        return $user->hasAnyPermission(['الاخطاء.ادارة', 'الاخطاء.توليد_تقارير']);
     }
 }

@@ -13,7 +13,7 @@ class GradePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(['الدرجات.عرض', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.عرض', 'الدرجات.ادارة']);
     }
 
     /**
@@ -21,7 +21,7 @@ class GradePolicy
      */
     public function view(User $user, Grade $grade): bool
     {
-        return $user->can(['الدرجات.عرض', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.عرض', 'الدرجات.ادارة']);
     }
 
     /**
@@ -29,7 +29,7 @@ class GradePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can(['الدرجات.انشاء', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.انشاء', 'الدرجات.ادارة']);
     }
 
     /**
@@ -37,7 +37,7 @@ class GradePolicy
      */
     public function update(User $user, Grade $grade): bool
     {
-        return $user->can(['الدرجات.تحديث', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.تحديث', 'الدرجات.ادارة']);
     }
 
     /**
@@ -45,7 +45,7 @@ class GradePolicy
      */
     public function delete(User $user, Grade $grade): bool
     {
-        return $user->can(['الدرجات.حذف', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.حذف', 'الدرجات.ادارة']);
     }
 
     /**
@@ -53,7 +53,7 @@ class GradePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can(['الدرجات.حذف', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission(['الدرجات.حذف', 'الدرجات.ادارة']);
     }
 
     /**

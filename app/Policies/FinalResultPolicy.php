@@ -9,16 +9,16 @@ class FinalResultPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can(['النتائج.عرض', 'النتائج.ادارة']);
+        return $user->hasAnyPermission(['النتائج.عرض', 'النتائج.ادارة']);
     }
 
     public function view(User $user, FinalResult $finalResult): bool
     {
-        return $user->can(['النتائج.عرض', 'النتائج.ادارة']);
+        return $user->hasAnyPermission(['النتائج.عرض', 'النتائج.ادارة']);
     }
 
     public function finalResultExport(User $user, FinalResult $finalResult): bool
     {
-        return $user->can(['النتائج.تصدير', 'النتائج.توليد_تقارير', 'النتائج.ادارة', 'الدرجات.ادارة', 'الدرجات.توليد_تقارير']);
+        return $user->hasAnyPermission(['النتائج.تصدير', 'النتائج.توليد_تقارير', 'النتائج.ادارة', 'الدرجات.ادارة', 'الدرجات.توليد_تقارير']);
     }
 }

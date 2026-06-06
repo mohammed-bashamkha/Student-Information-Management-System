@@ -14,7 +14,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('المستخدمين.ادارة');
+        return $user->hasAnyPermission(['المستخدمين.ادارة', 'المستخدمين.عرض']);
     }
 
     /**
@@ -22,7 +22,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->can('المستخدمين.ادارة');
+        return $user->hasAnyPermission(['المستخدمين.ادارة', 'المستخدمين.عرض']);
     }
 
     /**
@@ -38,7 +38,7 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->can('المستخدمين.ادارة') && Role::where('name','admin');
+        return $user->can('المستخدمين.ادارة');
     }
 
     /**
@@ -46,7 +46,11 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        return $user->can('المستخدمين.ادارة') && Role::where('name','admin');
+        // Prevent deleting oneself
+        if ($user->id === $model->id) {
+            return false;
+        }
+        return $user->can('المستخدمين.ادارة');
     }
 
     /**

@@ -2,10 +2,14 @@
 
 namespace App\Services\ActivityLogServices;
 
+use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogService
 {
+    use AuthorizesRequests;
     /**
      * Log an activity in the system.
      *
@@ -29,5 +33,28 @@ class ActivityLogService
         }
 
         $activity->log($description);
+    }
+
+    public function getAllActivityLogs(array $filters = [])
+    {
+        $this->authorize('viewAny', User::class);
+
+        $query = Activity::with(['causer', 'subject'])->latest();
+
+        if (isset($filters['user_id'])) {
+            $query->where('causer_id', $filters['user_id']);
+        }
+
+        return $query->paginate(15);
+    }
+
+    public function myLogs()
+    {
+        $logs = Activity::with(['subject'])
+            ->where('causer_id', Auth::id())
+            ->latest()
+            ->paginate(15);
+
+        return $logs;
     }
 }

@@ -13,7 +13,7 @@ class StudentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.عرض']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.عرض']);
     }
 
     /**
@@ -21,7 +21,7 @@ class StudentPolicy
      */
     public function view(User $user, Student $student): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.عرض']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.عرض']);
     }
 
     /**
@@ -29,7 +29,7 @@ class StudentPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.انشاء']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.انشاء']);
     }
 
     /**
@@ -38,8 +38,7 @@ class StudentPolicy
     public function update(User $user, Student $student): bool
     {
         return $user->can('الطلاب.ادارة')
-        || $user->can('الطلاب.تحديث')
-        && $user->id === $student->created;
+        || ($user->can('الطلاب.تحديث') && $user->id === $student->created_by);
     }
 
     /**
@@ -48,22 +47,21 @@ class StudentPolicy
     public function delete(User $user, Student $student): bool
     {
         return $user->can('الطلاب.ادارة')
-        || $user->can('الطلاب.حدف')
-        && $user->id === $student->created;
+        || ($user->can('الطلاب.حذف') && $user->id === $student->created_by);
     }
 
-    public function studentImport(User $user)
+    public function studentImport(User $user): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.استيراد']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.استيراد']);
     }
 
-    public function studentExport(User $user)
+    public function studentExport(User $user): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.تصدير']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.تصدير']);
     }
 
-    public function studentGenerateReport(User $user)
+    public function studentGenerateReport(User $user): bool
     {
-        return $user->can(['الطلاب.ادارة','الطلاب.توليد_تقارير']);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.توليد_تقارير']);
     }
 }

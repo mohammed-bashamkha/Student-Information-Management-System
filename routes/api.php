@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificateReplacementController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -123,6 +124,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('/transfers', [ReportsController::class, 'transfersAdmissionsReport']);
             Route::get('/results', [ReportsController::class, 'finalResultsReport']);
         });
+
+        // Activity Logs Routes
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/my-activity-logs', [ActivityLogController::class, 'myLogs']);
 
     });
 

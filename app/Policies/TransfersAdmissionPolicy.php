@@ -13,7 +13,7 @@ class TransfersAdmissionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(['التحويلات_القبول.عرض','التحويلات_القبول.ادارة']);
+        return $user->hasAnyPermission(['التحويلات_القبول.عرض', 'التحويلات_القبول.ادارة']);
     }
 
     /**
@@ -21,7 +21,7 @@ class TransfersAdmissionPolicy
      */
     public function view(User $user, TransfersAdmission $transfersAdmission): bool
     {
-        return $user->can(['التحويلات_القبول.عرض','التحويلات_القبول.ادارة']);
+        return $user->hasAnyPermission(['التحويلات_القبول.عرض', 'التحويلات_القبول.ادارة']);
     }
 
     /**
@@ -29,7 +29,7 @@ class TransfersAdmissionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can(['التحويلات_القبول.انشاء','التحويلات_القبول.ادارة']);
+        return $user->hasAnyPermission(['التحويلات_القبول.انشاء', 'التحويلات_القبول.ادارة']);
     }
 
     /**
@@ -38,8 +38,7 @@ class TransfersAdmissionPolicy
     public function update(User $user, TransfersAdmission $transfersAdmission): bool
     {
         return $user->can('التحويلات_القبول.ادارة')
-        || $user->can('التحويلات_القبول.تحديث')
-        && $user->id == $transfersAdmission->created_by;
+        || ($user->can('التحويلات_القبول.تحديث') && $user->id == $transfersAdmission->created_by);
     }
 
     /**
@@ -48,12 +47,11 @@ class TransfersAdmissionPolicy
     public function delete(User $user, TransfersAdmission $transfersAdmission): bool
     {
         return $user->can('التحويلات_القبول.ادارة')
-        || $user->can('التحويلات_القبول.حدف')
-        && $user->id == $transfersAdmission->created_by;
+        || ($user->can('التحويلات_القبول.حذف') && $user->id == $transfersAdmission->created_by);
     }
     
-    public function transfersAdmissionsGenerateReport(User $user)
+    public function transfersAdmissionsGenerateReport(User $user): bool
     {
-        return $user->can(['التحويلات_القبول.ادارة','التحويلات_القبول.توليد_تقارير']);
+        return $user->hasAnyPermission(['التحويلات_القبول.ادارة', 'التحويلات_القبول.توليد_تقارير']);
     }
 }
