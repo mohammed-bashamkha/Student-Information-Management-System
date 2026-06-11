@@ -22,6 +22,7 @@ use App\Http\Controllers\LevelController;
 use App\Http\Controllers\StudentsDataExportController;
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\GlobalSearchController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -124,6 +125,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('/transfers', [ReportsController::class, 'transfersAdmissionsReport']);
             Route::get('/results', [ReportsController::class, 'finalResultsReport']);
         });
+
+        // Global Search Route
+        Route::get('/search', [GlobalSearchController::class, 'search']);
 
         // Activity Logs Routes
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
