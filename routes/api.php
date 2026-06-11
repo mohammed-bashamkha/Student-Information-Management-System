@@ -118,13 +118,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::apiResource('/errors', ErrorController::class);
         Route::post('/errors/export', [ErrorController::class, 'exportStudentErrors']);
 
-        // Reports Routes
+        // Reports Routes (cached)
         Route::prefix('reports')->middleware('cacheResponse:300')->group(function () {
             Route::get('/students', [ReportsController::class, 'studentsReport']);
             Route::get('/schools', [ReportsController::class, 'schoolsReport']);
             Route::get('/transfers', [ReportsController::class, 'transfersAdmissionsReport']);
             Route::get('/results', [ReportsController::class, 'finalResultsReport']);
         });
+
+        // Comprehensive PDF export (NOT cached — always fresh)
+        Route::get('/reports/pdf/comprehensive', [ReportsController::class, 'comprehensivePdfReport']);
 
         // Global Search Route
         Route::get('/search', [GlobalSearchController::class, 'search']);

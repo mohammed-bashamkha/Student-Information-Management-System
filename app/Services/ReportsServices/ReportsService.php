@@ -139,12 +139,17 @@ class ReportsService
         }
 
         $schools = $query->get();
-        
-        $total = $schools->count();
+
+        $total        = $schools->count();
+        $publicCount  = $schools->where('school_type', 'public')->count();
+        $privateCount = $schools->where('school_type', 'private')->count();
+
+        // مكتظة: تجاوزت 90% من الطاقة الاستيعابية
         $overcrowded = $schools->filter(function ($school) {
             return $school->capacity > 0 && ($school->enrollments_count / $school->capacity) >= 0.9;
         })->count();
-        $suspended = $schools->where('school_type', 'private')->count();
+
+        // مدارس بدون طاقة استيعابية محددة (capacity = default 500 أو صفر)
         $totalStudents = $schools->sum('enrollments_count');
 
         $schoolsData = $schools->map(function ($school) {
@@ -154,10 +159,13 @@ class ReportsService
 
         return [
             'stats' => [
-                'total' => $total,
-                'overcrowded' => $overcrowded,
-                'suspended' => $suspended,
+                'total'         => $total,
+                'publicCount'   => $publicCount,
+                'privateCount'  => $privateCount,
+                'overcrowded'   => $overcrowded,
                 'totalStudents' => $totalStudents,
+                // Keep 'suspended' key for backward compatibility with old frontend
+                'suspended'     => $privateCount,
             ],
             'schools' => $schoolsData
         ];
