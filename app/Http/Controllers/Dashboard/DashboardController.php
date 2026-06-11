@@ -27,6 +27,10 @@ class DashboardController extends Controller
         $certificateReplacements = CertificateReplacement::count();
         $activeAcademicYear = AcademicYear::where('status','active')->first();
 
+        $suspendedStudentsCount = Student::whereHas('currentEnrollment', function ($q) {
+            $q->where('status', 'suspended');
+        })->count();
+
         $expiredAdmissions = TransfersAdmission::where('type', 'admission')
             ->where('status', 'approved')
             ->whereNotNull('end_date')
@@ -91,7 +95,7 @@ class DashboardController extends Controller
             'needs_attention' => [
                 'transfers_awaiting_review' => $transferPending,
                 'expired_temporary_admissions' => $admissionPending,
-                'incomplete_files' => 7, // TODO: Replace with dynamic query when file logic is added
+                'suspended_students' => $suspendedStudentsCount,
             ],
             'student_density_alerts' => $studentDensityAlerts,
             'activity_log' => $recentActivities,

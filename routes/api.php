@@ -111,7 +111,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/suspended-students', [SuspendedStudentController::class, 'index'])->name('suspended-students.index');
         Route::post('/suspended-students/{studentId}/restore', [SuspendedStudentController::class, 'restore'])->name('suspended-students.restore');
 
-        Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('cacheResponse:300');
+        Route::get('/dashboard', [DashboardController::class, 'index']);
 
         // errors routes
         Route::apiResource('/errors', ErrorController::class);

@@ -26,12 +26,26 @@ class SuspendedStudentController extends Controller
     public function index(Request $request)
     {
         $query = StudentEnrollment::with([
-            'student',
+            'student.transfers' => function ($q) {
+                $q->where('type', 'admission')
+                  ->where('status', 'approved')
+                  ->whereNotNull('end_date')
+                  ->where('end_date', '<', now()->toDateString())
+                  ->with(['fromSchool', 'toSchool', 'schoolClass'])
+                  ->latest();
+            },
             'school',
             'schoolClass',
             'academicYear',
         ])
-            ->where('status', 'suspended');
+        ->where('status', 'suspended')
+        ->whereHas('student.transfers', function ($q) {
+            $q->where('type', 'admission')
+              ->where('status', 'approved')
+              ->whereNotNull('end_date')
+              ->where('end_date', '<', now()->toDateString())
+              ->whereColumn('transfers_admissions.academic_year_id', 'student_enrollments.academic_year_id');
+        });
 
         // فلترة بالعام الدراسي
         if ($request->filled('academic_year_id')) {
@@ -54,20 +68,23 @@ class SuspendedStudentController extends Controller
 
         $suspendedEnrollments = $query->latest()->paginate(15);
 
-        // إضافة تفاصيل القبول المؤقت المنتهي لكل طالب
+        // إضافة تفاصيل القبول المؤقت المنتهي لكل طالب بدون N+1 Queries
         $suspendedEnrollments->getCollection()->transform(function ($enrollment) {
-            $expiredAdmission = TransfersAdmission::where('student_id', $enrollment->student_id)
-                ->where('type', 'admission')
-                ->where('status', 'approved')
+            $expiredAdmission = $enrollment->student?->transfers
                 ->where('academic_year_id', $enrollment->academic_year_id)
-                ->whereNotNull('end_date')
-                ->where('end_date', '<', now()->toDateString())
-                ->with(['fromSchool', 'toSchool', 'schoolClass'])
-                ->latest()
                 ->first();
 
-            $enrollment->expired_admission = $expiredAdmission;
-            $enrollment->original_school   = $expiredAdmission?->fromSchool;
+            if ($expiredAdmission) {
+                $enrollment->setRelation('expired_admission', $expiredAdmission);
+                if ($expiredAdmission->fromSchool) {
+                    $enrollment->setRelation('original_school', $expiredAdmission->fromSchool);
+                }
+            }
+
+            // إخفاء relation transfers حتى لا يرسل بيانات ضخمة، بدلاً من unset لتفادي تعطل الكود إذا تكرر الطالب
+            if ($enrollment->student) {
+                $enrollment->student->makeHidden(['transfers']);
+            }
 
             return $enrollment;
         });
@@ -113,28 +130,52 @@ class SuspendedStudentController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($enrollment, $expiredAdmission) {
-            // 1. إعادة تسجيل الطالب لمدرسته الأصلية وتفعيله
-            $enrollment->update([
-                'status'    => 'active',
-                'school_id' => $expiredAdmission->from_school_id,
-                'class_id'  => $expiredAdmission->class_id,  // نفس الصف الذي كان فيه
-            ]);
+        $action = $request->input('action', 'return_to_original');
 
-            // 2. حذف القبول المؤقت المنتهي
-            $expiredAdmission->delete();
+        DB::transaction(function () use ($enrollment, $expiredAdmission, $action) {
+            if ($action === 'permanent_transfer') {
+                // تفعيل الطالب في المدرسة الحالية وتحديث نوع القبول
+                $enrollment->update([
+                    'status' => 'active',
+                ]);
+                
+                $expiredAdmission->update([
+                    'type' => 'transfer',
+                    'end_date' => null,
+                ]);
+            } else {
+                // 1. إعادة تسجيل الطالب لمدرسته الأصلية وتفعيله
+                $enrollment->update([
+                    'status'    => 'active',
+                    'school_id' => $expiredAdmission->from_school_id,
+                    'class_id'  => $expiredAdmission->class_id,  // نفس الصف الذي كان فيه
+                ]);
+
+                // 2. حذف القبول المؤقت المنتهي
+                $expiredAdmission->delete();
+            }
         });
 
         $enrollment->load(['student', 'school', 'schoolClass', 'academicYear']);
 
-        activity('students')
-            ->causedBy(Auth::user())
-            ->performedOn($enrollment->student)
-            ->event('restore')
-            ->log('تم استعادة الطالب الموقوف: ' . $enrollment->student->full_name . ' إلى مدرسته الأصلية');
+        if ($action === 'permanent_transfer') {
+            activity('students')
+                ->causedBy(Auth::user())
+                ->performedOn($enrollment->student)
+                ->event('restore')
+                ->log('تم تفعيل الطالب الموقوف: ' . $enrollment->student->full_name . ' وتحويله بشكل دائم للمدرسة الحالية');
+        } else {
+            activity('students')
+                ->causedBy(Auth::user())
+                ->performedOn($enrollment->student)
+                ->event('restore')
+                ->log('تم استعادة الطالب الموقوف: ' . $enrollment->student->full_name . ' إلى مدرسته الأصلية');
+        }
 
         return response()->json([
-            'message' => 'تم استعادة الطالب بنجاح وإعادته لمدرسته الأصلية.',
+            'message' => $action === 'permanent_transfer' 
+                ? 'تم تفعيل الطالب بنجاح وتحويله بشكل دائم للمدرسة الحالية.' 
+                : 'تم استعادة الطالب بنجاح وإعادته لمدرسته الأصلية.',
             'data'    => [
                 'student'          => $enrollment->student,
                 'restored_to'      => $enrollment->school,

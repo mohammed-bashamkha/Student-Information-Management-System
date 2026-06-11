@@ -9,7 +9,11 @@ class FinalResultService
     public function getFinalResults(array $filters, int $perPage = 10)
     {
         $query = FinalResult::with([
-            'student',
+            'student.enrollments' => function($q) {
+                $q->with(['school', 'schoolClass']);
+            },
+            'student.school',
+            'student.schoolClass',
             'school',
             'schoolClass',
             'academicYear',
@@ -46,6 +50,29 @@ class FinalResultService
                 $status = 'conditional';
             }
 
+            $school = $r->school;
+            $schoolClass = $r->schoolClass;
+
+            // Fallback to student's enrollment for the same academic year if school or class is missing
+            if ((!$school || !$schoolClass) && $r->student) {
+                // Try to find the enrollment for this academic year
+                $enrollment = $r->student->enrollments->firstWhere('academic_year_id', $r->academic_year_id);
+                
+                // If not found, fallback to their most recent enrollment or base school/class
+                if (!$enrollment) {
+                    $enrollment = $r->student->enrollments->last();
+                }
+
+                if ($enrollment) {
+                    $school = $school ?: $enrollment->school;
+                    $schoolClass = $schoolClass ?: $enrollment->schoolClass;
+                }
+
+                // Final fallback to student's direct school/class attributes
+                $school = $school ?: $r->student->school;
+                $schoolClass = $schoolClass ?: $r->student->schoolClass;
+            }
+
             return [
                 'id' => $r->id,
                 'student_id' => $r->student_id,
@@ -59,8 +86,8 @@ class FinalResultService
                 'notes' => $r->notes,
                 'created_at' => $r->created_at,
                 'student' => $r->student,
-                'school' => $r->school,
-                'school_class' => $r->schoolClass,
+                'school' => $school,
+                'school_class' => $schoolClass,
             ];
         });
 

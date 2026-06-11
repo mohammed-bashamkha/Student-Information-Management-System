@@ -20,22 +20,15 @@ class StudentsDataExportController extends Controller
         ]);
 
         $fileName = 'Student_Data_' . now()->format('Y_m_d') . '.xlsx';
-        $cacheKey = "excel_export_{$request->school_id}_{$request->class_id}_{$request->academic_year_id}";
 
-        $fileContent = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($request) {
-            return Excel::raw(
-                new StudentDataExport(
-                    $request->school_id,
-                    $request->class_id,
-                    $request->academic_year_id
-                ),
-                \Maatwebsite\Excel\Excel::XLSX
-            );
-        });
-
-        return response($fileContent)
-            ->header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        return Excel::download(
+            new StudentDataExport(
+                $request->school_id,
+                $request->class_id,
+                $request->academic_year_id
+            ),
+            $fileName
+        );
     }
 
     public function exportForm()

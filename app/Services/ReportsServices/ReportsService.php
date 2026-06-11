@@ -47,6 +47,35 @@ class ReportsService
         $total = $query->count();
         $new = (clone $query)->whereYear('created_at', now()->year)->count();
 
+        // Calculate previous year percentage
+        $previousYearPercentage = 0;
+        $previousYear = \App\Models\AcademicYear::where('id', '<', $academicYearId)->orderBy('id', 'desc')->first();
+        if ($previousYear) {
+            $prevQuery = Student::query();
+            $prevQuery->whereHas('enrollments', function ($q) use ($previousYear, $filters) {
+                $q->where('academic_year_id', $previousYear->id);
+                if (!empty($filters['school_id'])) {
+                    $q->where('school_id', $filters['school_id']);
+                }
+                if (!empty($filters['class_id'])) {
+                    $q->where('class_id', $filters['class_id']);
+                }
+                if (!empty($filters['status'])) {
+                    $q->where('status', $filters['status']);
+                }
+            });
+            if (!empty($filters['gender'])) {
+                $prevQuery->where('gender', $filters['gender']);
+            }
+            $prevTotal = $prevQuery->count();
+
+            if ($prevTotal > 0) {
+                $previousYearPercentage = round((($total - $prevTotal) / $prevTotal) * 100, 1);
+            } else if ($total > 0) {
+                $previousYearPercentage = 100;
+            }
+        }
+
         $transfersQuery = TransfersAdmission::where('type', 'transfer')->where('status', 'approved');
         if ($academicYearId) {
             $transfersQuery->where('academic_year_id', $academicYearId);
@@ -84,6 +113,7 @@ class ReportsService
                 'new' => $new,
                 'villages' => $villages,
                 'repeaters' => $repeaters,
+                'previousYearPercentage' => $previousYearPercentage,
             ],
             'students' => $students
         ];
@@ -165,68 +195,123 @@ class ReportsService
     {
         $activeYearId = \App\Models\AcademicYear::where('status', 'active')->value('id');
         $academicYearId = $filters['academic_year_id'] ?? $activeYearId;
-        $filters['academic_year_id'] = $academicYearId; // Ensure paginator uses it
-        
+        $filters['academic_year_id'] = $academicYearId;
+
         $finalResultService = app(\App\Services\FinalResultServices\FinalResultService::class);
         $resultsPaginator = $finalResultService->getFinalResults($filters, 15);
 
-        $query = FinalResult::query();
-
-        if ($academicYearId) {
-            $query->where('academic_year_id', $academicYearId);
-        }
-        if (!empty($filters['school_id'])) {
-            $query->where('school_id', $filters['school_id']);
-        }
-        if (!empty($filters['class_id'])) {
-            $query->where('class_id', $filters['class_id']);
-        }
-
-        $total = $query->count();
-        
         $stats = [
             'passRate' => 0,
             'average' => 0,
             'topCount' => 0,
             'failRate' => 0,
             'previousYearPassRate' => 0,
+            'highestStudent' => null,
         ];
 
-        if ($total > 0) {
-            $passed = (clone $query)->where(function($q) {
-                $q->where('final_result', 'LIKE', '%ناجح%')
-                  ->orWhere('final_result', 'LIKE', '%ناجحة%');
-            })->count();
+        try {
+            // Build a base DB query (not Eloquent) to avoid strict mode issues with GROUP BY
+            $baseWhere = function ($q) use ($academicYearId, $filters) {
+                if ($academicYearId) {
+                    $q->where('academic_year_id', $academicYearId);
+                }
+                if (!empty($filters['school_id'])) {
+                    $q->where('school_id', $filters['school_id']);
+                }
+                if (!empty($filters['class_id'])) {
+                    $q->where('class_id', $filters['class_id']);
+                }
+            };
 
-            $stats['passRate'] = round(($passed / $total) * 100);
-            $stats['average'] = round((clone $query)->avg('average_grade'), 1);
-            $stats['topCount'] = (clone $query)->where('average_grade', '>=', 95)->count();
-            $stats['failRate'] = 100 - $stats['passRate'];
-        }
+            $total = \Illuminate\Support\Facades\DB::table('final_results')->where($baseWhere)->count();
 
-        // Calculate previous year pass rate
-        $previousYear = \App\Models\AcademicYear::where('id', '<', $academicYearId)->orderBy('id', 'desc')->first();
-        if ($previousYear) {
-            $prevQuery = FinalResult::where('academic_year_id', $previousYear->id);
-            if (!empty($filters['school_id'])) {
-                $prevQuery->where('school_id', $filters['school_id']);
+            if ($total > 0) {
+                // Pass rate
+                $passed = \Illuminate\Support\Facades\DB::table('final_results')
+                    ->where($baseWhere)
+                    ->where(function ($q) {
+                        $q->where('final_result', 'LIKE', '%ناجح%')
+                          ->orWhere('final_result', 'LIKE', '%ناجحة%');
+                    })->count();
+
+                $stats['passRate'] = round(($passed / $total) * 100);
+                $stats['failRate'] = 100 - $stats['passRate'];
+
+                // Average grade
+                $average = \Illuminate\Support\Facades\DB::table('final_results')
+                    ->where($baseWhere)
+                    ->avg('average_grade');
+                $stats['average'] = $average ? round((float) $average, 1) : 0;
+
+                // Top 3 students per school
+                $schoolCounts = \Illuminate\Support\Facades\DB::table('final_results')
+                    ->select('school_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as total_students'))
+                    ->where($baseWhere)
+                    ->whereNotNull('school_id')
+                    ->groupBy('school_id')
+                    ->get();
+
+                $topStudentsCount = 0;
+                foreach ($schoolCounts as $row) {
+                    $topStudentsCount += min($row->total_students, 3);
+                }
+                $stats['topCount'] = $topStudentsCount;
+
+                // Highest student
+                $highestResult = FinalResult::with('student')
+                    ->where(function ($q) use ($academicYearId, $filters) {
+                        if ($academicYearId) {
+                            $q->where('academic_year_id', $academicYearId);
+                        }
+                        if (!empty($filters['school_id'])) {
+                            $q->where('school_id', $filters['school_id']);
+                        }
+                        if (!empty($filters['class_id'])) {
+                            $q->where('class_id', $filters['class_id']);
+                        }
+                    })
+                    ->whereNotNull('average_grade')
+                    ->orderByDesc('average_grade')
+                    ->first();
+
+                if ($highestResult && $highestResult->student) {
+                    $stats['highestStudent'] = [
+                        'name' => $highestResult->student->full_name ?? 'غير معروف',
+                        'average' => $highestResult->average_grade,
+                    ];
+                }
             }
-            if (!empty($filters['class_id'])) {
-                $prevQuery->where('class_id', $filters['class_id']);
+
+            // Previous year pass rate
+            if ($academicYearId) {
+                $previousYear = \App\Models\AcademicYear::where('id', '<', $academicYearId)->orderBy('id', 'desc')->first();
+                if ($previousYear) {
+                    $prevTotal = \Illuminate\Support\Facades\DB::table('final_results')
+                        ->where('academic_year_id', $previousYear->id)
+                        ->when(!empty($filters['school_id']), fn($q) => $q->where('school_id', $filters['school_id']))
+                        ->when(!empty($filters['class_id']), fn($q) => $q->where('class_id', $filters['class_id']))
+                        ->count();
+
+                    if ($prevTotal > 0) {
+                        $prevPassed = \Illuminate\Support\Facades\DB::table('final_results')
+                            ->where('academic_year_id', $previousYear->id)
+                            ->when(!empty($filters['school_id']), fn($q) => $q->where('school_id', $filters['school_id']))
+                            ->when(!empty($filters['class_id']), fn($q) => $q->where('class_id', $filters['class_id']))
+                            ->where(function ($q) {
+                                $q->where('final_result', 'LIKE', '%ناجح%')
+                                  ->orWhere('final_result', 'LIKE', '%ناجحة%');
+                            })->count();
+                        $stats['previousYearPassRate'] = round(($prevPassed / $prevTotal) * 100);
+                    }
+                }
             }
-            $prevTotal = $prevQuery->count();
-            if ($prevTotal > 0) {
-                $prevPassed = (clone $prevQuery)->where(function($q) {
-                    $q->where('final_result', 'LIKE', '%ناجح%')
-                      ->orWhere('final_result', 'LIKE', '%ناجحة%');
-                })->count();
-                $stats['previousYearPassRate'] = round(($prevPassed / $prevTotal) * 100);
-            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Results report stats error: ' . $e->getMessage());
         }
 
         return [
             'stats' => $stats,
-            'results' => $resultsPaginator
+            'results' => $resultsPaginator,
         ];
     }
 }

@@ -31,6 +31,9 @@ class ReportsController extends Controller
 
     public function finalResultsReport(Request $request)
     {
+        if (class_exists(\Spatie\ResponseCache\Facades\ResponseCache::class)) {
+            \Spatie\ResponseCache\Facades\ResponseCache::clear();
+        }
         return response()->json($this->reportsService->finalResultsReport($request->all()));
     }
 }
