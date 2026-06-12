@@ -13,7 +13,14 @@ class TransfersAdmissionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['التحويلات_القبول.عرض', 'التحويلات_القبول.ادارة']);
+        return $user->hasAnyPermission([
+            'التحويلات_القبول.عرض',
+            'التحويلات_القبول.ادارة',
+            'التحويلات_القبول.انشاء',
+            'التحويلات_القبول.تحديث',
+            'التحويلات_القبول.حذف',
+            'التحويلات_القبول.توليد_تقارير',
+        ]);
     }
 
     /**
@@ -21,7 +28,12 @@ class TransfersAdmissionPolicy
      */
     public function view(User $user, TransfersAdmission $transfersAdmission): bool
     {
-        return $user->hasAnyPermission(['التحويلات_القبول.عرض', 'التحويلات_القبول.ادارة']);
+        return $user->hasAnyPermission([
+            'التحويلات_القبول.عرض',
+            'التحويلات_القبول.ادارة',
+            'التحويلات_القبول.تحديث',
+            'التحويلات_القبول.حذف',
+        ]);
     }
 
     /**
@@ -37,8 +49,7 @@ class TransfersAdmissionPolicy
      */
     public function update(User $user, TransfersAdmission $transfersAdmission): bool
     {
-        return $user->can('التحويلات_القبول.ادارة')
-        || ($user->can('التحويلات_القبول.تحديث') && $user->id == $transfersAdmission->created_by);
+        return $user->hasAnyPermission(['التحويلات_القبول.تحديث', 'التحويلات_القبول.ادارة']);
     }
 
     /**
@@ -46,8 +57,7 @@ class TransfersAdmissionPolicy
      */
     public function delete(User $user, TransfersAdmission $transfersAdmission): bool
     {
-        return $user->can('التحويلات_القبول.ادارة')
-        || ($user->can('التحويلات_القبول.حذف') && $user->id == $transfersAdmission->created_by);
+        return $user->hasAnyPermission(['التحويلات_القبول.حذف', 'التحويلات_القبول.ادارة']);
     }
     
     public function transfersAdmissionsGenerateReport(User $user): bool

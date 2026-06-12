@@ -7,6 +7,11 @@
     <style>
         @include('PDF._fonts')
 
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -15,85 +20,120 @@
 
       body {
         font-family: "Amiri", "Cairo", "Traditional Arabic", serif;
-        background: #f5f5f5;
+        background: #e8e8e8;
         display: flex;
         justify-content: center;
-        padding: 20px;
+        padding: 0;
+        margin: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
 
       .page {
         width: 210mm;
-        min-height: 297mm;
+        height: 297mm;
         background: white;
-        padding: 10mm 20mm 10mm 20mm;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 12mm 18mm 10mm 18mm;
         position: relative;
+        overflow: hidden;
+      }
+
+      /* Decorative top accent */
+      .page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #1a3a5c, #2c5f8a, #1a3a5c);
       }
 
       /* Header Section */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            direction: rtl;
-        }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #1a3a5c;
+        direction: rtl;
+      }
 
-        .header-right {
-            text-align: right;
-            font-size: 16px;
-            font-weight: bold;
-            line-height: 1.8;
-        }
+      .header-right {
+        text-align: right;
+        font-size: 14px;
+        font-weight: bold;
+        line-height: 2;
+        color: #1a3a5c;
+      }
 
-        .header-center {
-            text-align: center;
-        }
+      .header-center {
+        text-align: center;
+        padding: 0 10px;
+      }
 
-        .header-center img {
-            width: 150px;
-            height: auto;
-        }
+      .header-center img {
+        width: 120px;
+        height: auto;
+      }
 
-        .header-left {
-            text-align: left;
-            font-size: 16px;
-            font-weight: bold;
-            line-height: 2;
-        }
+      .header-left {
+        text-align: left;
+        font-size: 13px;
+        font-weight: bold;
+        line-height: 2.2;
+        color: #333;
+      }
 
-        .header-left span {
-            letter-spacing: 2px;
-        }
+      .header-left span {
+        letter-spacing: 1px;
+        color: #1a3a5c;
+      }
 
       /* Main Title */
       .main-title {
         text-align: center;
-        font-size: 26px;
+        font-size: 22px;
         font-weight: bold;
-        margin: 20px 0 10px;
-        text-decoration: underline;
-        text-underline-offset: 8px;
+        margin: 12px 0 10px;
+        color: #1a3a5c;
+        letter-spacing: 1px;
+        position: relative;
+        padding-bottom: 8px;
+      }
+
+      .main-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #1a3a5c, transparent);
       }
 
       /* Sections */
       .section {
-        border: 2px solid #333;
-        margin: 15px 0;
-        position: relative;
+        border: 1.5px solid #2c5f8a;
+        margin: 10px 0;
+        border-radius: 4px;
+        overflow: hidden;
       }
 
       .section-title {
-        background: #e8e8e8;
+        background: #1a3a5c;
+        color: white;
         text-align: center;
-        font-size: 18px;
+        font-size: 15px;
         font-weight: bold;
-        padding: 8px;
-        border-bottom: 2px solid #333;
+        padding: 6px 10px;
+        letter-spacing: 0.5px;
       }
 
       .section-content {
-        padding: 15px;
+        padding: 10px 12px;
       }
 
       /* Student Photo & Form Container */
@@ -104,39 +144,36 @@
 
       .form-fields {
         flex: 1;
-        padding: 15px;
+        padding: 10px 12px;
       }
 
       .photo-area {
-        width: 160px;
-        min-height: 200px;
-        border: 2px solid #333;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 15px;
-        background: #fafafa;
+        width: 140px;
+        height: 170px;
+        border: 1.5px solid #2c5f8a;
+        margin: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #f8f9fa;
+      }
+
+      .photo-area img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
 
       .photo-area .photo-placeholder {
-        width: 120px;
-        height: 150px;
-        border: 1px dashed #999;
+        width: 100%;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 8px;
-        background: #f0f0f0;
-        color: #888;
+        background: #f0f2f5;
+        color: #8899aa;
         font-size: 13px;
         text-align: center;
-      }
-
-      .photo-area .photo-label {
-        font-size: 14px;
-        font-weight: bold;
-        color: #333;
       }
 
       /* Form Row */
@@ -144,8 +181,8 @@
         display: flex;
         justify-content: flex-start;
         flex-wrap: wrap;
-        margin-bottom: 12px;
-        font-size: 15px;
+        margin-bottom: 8px;
+        font-size: 13px;
         direction: rtl;
       }
 
@@ -156,7 +193,7 @@
       .form-field {
         display: flex;
         align-items: baseline;
-        margin-left: 20px;
+        margin-left: 15px;
         flex: 1;
         min-width: 45%;
       }
@@ -169,31 +206,37 @@
         font-weight: bold;
         white-space: nowrap;
         margin-left: 5px;
-        font-size: 15px;
+        font-size: 13px;
+        color: #1a3a5c;
       }
 
       .form-field .dots {
         flex: 1;
-        border-bottom: 1px dotted #666;
+        border-bottom: 1px dotted #999;
         margin-right: 5px;
-        min-width: 60px;
-        height: 20px;
+        min-width: 50px;
+        height: 18px;
+        font-size: 13px;
+        color: #333;
+        padding-bottom: 1px;
       }
 
       /* Disclaimer text */
       .disclaimer {
         text-align: center;
-        font-size: 14px;
-        margin: 15px 0;
-        padding: 5px;
+        font-size: 12px;
+        margin: 8px 0;
+        padding: 5px 10px;
+        color: #444;
+        font-style: italic;
       }
 
       /* Signature row */
       .signature-row {
         display: flex;
         justify-content: space-between;
-        font-size: 14px;
-        margin: 10px 0;
+        font-size: 12px;
+        margin: 6px 0;
         direction: rtl;
       }
 
@@ -206,49 +249,66 @@
         font-weight: bold;
         margin-left: 5px;
         white-space: nowrap;
+        color: #1a3a5c;
+        font-size: 12px;
       }
 
       .signature-field .dots {
-        border-bottom: 1px dotted #666;
-        min-width: 100px;
-        height: 20px;
+        border-bottom: 1px dotted #999;
+        min-width: 80px;
+        height: 18px;
+        font-size: 12px;
       }
 
       /* Checkboxes */
       .checkbox-row {
         display: flex;
-        gap: 20px;
-        margin-top: 10px;
-        font-size: 14px;
+        gap: 15px;
+        margin-top: 8px;
+        font-size: 12px;
         flex-wrap: wrap;
       }
 
       .checkbox-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
       }
 
       .checkbox-item input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #333;
+        width: 14px;
+        height: 14px;
+        accent-color: #1a3a5c;
+      }
+
+      .checkbox-item label {
+        font-size: 12px;
       }
 
       /* Grades Table */
       .grades-section {
-        border: 0px solid #333;
-        margin: 15px 0;
+        margin: 10px 0;
       }
 
       .grades-title {
         text-align: center;
-        font-size: 18px;
+        font-size: 15px;
         font-weight: bold;
-        padding: 8px;
-        /* border-bottom: 2px solid #333; */
-        text-decoration: underline;
-        text-underline-offset: 5px;
+        padding: 6px;
+        color: #1a3a5c;
+        position: relative;
+        margin-bottom: 6px;
+      }
+
+      .grades-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #1a3a5c, transparent);
       }
 
       .grades-table {
@@ -258,29 +318,38 @@
 
       .grades-table th,
       .grades-table td {
-        border: 1px solid #333;
-        padding: 8px 10px;
+        border: 1px solid #2c5f8a;
+        padding: 5px 6px;
         text-align: center;
-        font-size: 13px;
+        font-size: 11px;
       }
 
       .grades-table th {
-        background: #f5f5f5;
+        background: #1a3a5c;
+        color: white;
         font-weight: bold;
+        font-size: 11px;
       }
 
       .grades-table td {
-        height: 30px;
+        height: 25px;
+        background: white;
+      }
+
+      .grades-table tbody tr:nth-child(even) td {
+        background: #f4f7fa;
       }
 
       .grades-table .subject-col {
-        width: 120px;
+        width: 110px;
         font-weight: bold;
+        color: #1a3a5c;
+        background: #edf2f7 !important;
       }
 
       .grades-table .total-col,
       .grades-table .average-col {
-        width: 70px;
+        width: 60px;
         font-weight: bold;
       }
 
@@ -288,34 +357,52 @@
       .footer-signatures {
         display: flex;
         justify-content: space-between;
-        margin-top: 20px;
-        font-size: 14px;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1.5px solid #1a3a5c;
+        font-size: 12px;
         text-align: center;
         direction: rtl;
       }
 
       .footer-sig {
         text-align: center;
+        min-width: 140px;
       }
 
       .footer-sig .name {
         font-weight: bold;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
+        color: #1a3a5c;
+        font-size: 12px;
       }
 
       .footer-sig .title {
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
+        color: #555;
       }
 
       /* Requirements footer */
       .requirements {
-        margin-top: 15px;
-        font-size: 11px;
+        margin-top: 10px;
+        font-size: 9px;
         line-height: 1.8;
-        border-top: 1px solid #ccc;
-        padding-top: 8px;
+        border-top: 1px solid #ddd;
+        padding-top: 6px;
         text-align: right;
+        color: #666;
+      }
+
+      /* Decorative bottom accent */
+      .page::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #1a3a5c, #2c5f8a, #1a3a5c);
       }
 
       @media print {
@@ -324,9 +411,9 @@
           padding: 0;
         }
         .page {
-          width: 100%;
+          width: 210mm;
+          height: 297mm;
           box-shadow: none;
-          padding: 10mm;
         }
       }
     </style>
@@ -407,11 +494,10 @@
           <!-- Student Photo -->
           <div class="photo-area">
             @if($certificate->student_image)
-              <img src="{{ public_path('storage/' . $certificate->student_image) }}" style="width:120px;height:150px;object-fit:cover;" alt="صورة الطالب">
+              <img src="{{ public_path('storage/' . $certificate->student_image) }}" alt="">
             @else
               <div class="photo-placeholder">صورة<br />الطالب</div>
             @endif
-            <div class="photo-label">صورة الطالب</div>
           </div>
         </div>
       </div>
@@ -425,7 +511,7 @@
       <div class="signature-row">
         <div class="signature-field">
           <label>أسم المتقدم:</label>
-          <div class="dots">{{ $student->full_name ?? '' }}</div>
+          <div class="dots"></div>
         </div>
         <div class="signature-field">
           <label>توقيعة:</label>
@@ -513,14 +599,17 @@
           <thead>
             <tr>
                 <th class="subject-col">المـــادة</th>
-                <th>قران</th>
-                <th>عربي</th>
-                <th>انجليزي</th>
-                <th>رياضيات</th>
-                <th>فيزياء</th>
-                <th>كيمياء</th>
-                <th>احياء</th>
-                <th>موسيقى</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
                 <th class="average-col">المعـــدل</th>
                 <th class="total-col">المجمـــوع</th>
             </tr>
@@ -528,6 +617,9 @@
           <tbody>
             <tr>
                 <td class="subject-col">النهاية الكبرى</td>
+              <td></td>
+              <td></td>
+              <td></td>
               <td></td>
               <td></td>
               <td></td>
@@ -551,9 +643,15 @@
               <td></td>
               <td></td>
               <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
             </tr>
             <tr>
                 <td class="subject-col">الدرجة المتحصل عليها</td>
+              <td></td>
+              <td></td>
+              <td></td>
               <td></td>
               <td></td>
               <td></td>

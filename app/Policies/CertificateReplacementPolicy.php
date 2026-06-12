@@ -13,7 +13,7 @@ class CertificateReplacementPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(['بدل_فاقد.ادارة','بدل_فاقد.عرض']);
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.عرض', 'بدل_فاقد.انشاء', 'بدل_فاقد.تحديث', 'بدل_فاقد.حذف']);
     }
 
     /**
@@ -21,7 +21,7 @@ class CertificateReplacementPolicy
      */
     public function view(User $user, CertificateReplacement $certificateReplacement): bool
     {
-        return $user->can(['بدل_فاقد.ادارة','بدل_فاقد.عرض']);
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.عرض', 'بدل_فاقد.تحديث', 'بدل_فاقد.حذف']);
     }
 
     /**
@@ -29,7 +29,7 @@ class CertificateReplacementPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can(['بدل_فاقد.ادارة','بدل_فاقد.انشاء']);
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.انشاء']);
     }
 
     /**
@@ -37,9 +37,7 @@ class CertificateReplacementPolicy
      */
     public function update(User $user, CertificateReplacement $certificateReplacement): bool
     {
-        return $user->can('بدل_فاقد.ادارة')
-        || $user->can('بدل_فاقد.تحديث')
-        && $user->id == $certificateReplacement->createdBy;
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.تحديث']);
     }
 
     /**
@@ -47,13 +45,11 @@ class CertificateReplacementPolicy
      */
     public function delete(User $user, CertificateReplacement $certificateReplacement): bool
     {
-        return $user->can('بدل_فاقد.ادارة')
-        || $user->can('بدل_فاقد.تحديث')
-        && $user->id == $certificateReplacement->createdBy;
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.حذف']);
     }
 
-    public function generateReport(User $user)
+    public function generateReport(User $user): bool
     {
-        return $user->can(['بدل_فاقد.ادارة','بدل_فاقد.توليد_تقارير']);
+        return $user->hasAnyPermission(['بدل_فاقد.ادارة', 'بدل_فاقد.توليد_تقارير']);
     }
 }

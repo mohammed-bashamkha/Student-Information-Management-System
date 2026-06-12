@@ -13,12 +13,19 @@ class SchoolClassPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('الصفوف.عرض');
+        return $user->hasAnyPermission(['الصفوف.عرض', 'الصفوف.ادارة']);
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, SchoolClass $schoolClass): bool
+    {
+        return $user->hasAnyPermission(['الصفوف.عرض', 'الصفوف.ادارة']);
     }
 
     public function manageSchoolClass(User $user): bool
     {
         return $user->can('الصفوف.ادارة');
     }
-
 }

@@ -13,7 +13,14 @@ class ErrorPolicy
      */
     public function viewAny(User $user): bool
     {
-       return $user->hasAnyPermission(['الاخطاء.عرض', 'الاخطاء.ادارة']);
+        return $user->hasAnyPermission([
+            'الاخطاء.عرض',
+            'الاخطاء.ادارة',
+            'الاخطاء.انشاء',
+            'الاخطاء.تحديث',
+            'الاخطاء.حذف',
+            'الاخطاء.توليد_تقارير',
+        ]);
     }
 
     /**
@@ -21,7 +28,28 @@ class ErrorPolicy
      */
     public function view(User $user, Error $error): bool
     {
-        return $user->hasAnyPermission(['الاخطاء.عرض', 'الاخطاء.ادارة']);
+        return $user->hasAnyPermission([
+            'الاخطاء.عرض',
+            'الاخطاء.ادارة',
+            'الاخطاء.تحديث',
+            'الاخطاء.حذف',
+        ]);
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        return $user->hasAnyPermission(['الاخطاء.ادارة', 'الاخطاء.انشاء']);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Error $error): bool
+    {
+        return $user->hasAnyPermission(['الاخطاء.ادارة', 'الاخطاء.تحديث']);
     }
 
     /**
@@ -29,8 +57,7 @@ class ErrorPolicy
      */
     public function delete(User $user, Error $error): bool
     {
-        return $user->can('الاخطاء.ادارة')
-        || ($user->can('الاخطاء.حذف') && $user->id === $error->created_by);
+        return $user->hasAnyPermission(['الاخطاء.ادارة', 'الاخطاء.حذف']);
     }
 
     public function errorGenerateReport(User $user): bool

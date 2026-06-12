@@ -13,7 +13,14 @@ class GradePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['الدرجات.عرض', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission([
+            'الدرجات.عرض',
+            'الدرجات.ادارة',
+            'الدرجات.انشاء',
+            'الدرجات.تحديث',
+            'الدرجات.حذف',
+            'الدرجات.توليد_تقارير',
+        ]);
     }
 
     /**
@@ -21,7 +28,12 @@ class GradePolicy
      */
     public function view(User $user, Grade $grade): bool
     {
-        return $user->hasAnyPermission(['الدرجات.عرض', 'الدرجات.ادارة']);
+        return $user->hasAnyPermission([
+            'الدرجات.عرض',
+            'الدرجات.ادارة',
+            'الدرجات.تحديث',
+            'الدرجات.حذف',
+        ]);
     }
 
     /**

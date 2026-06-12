@@ -10,18 +10,34 @@ class StudentPolicy
 {
     /**
      * Determine whether the user can view any models.
+     * أي مستخدم لديه أي صلاحية على الطلاب يمكنه رؤية القائمة
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.عرض']);
+        return $user->hasAnyPermission([
+            'الطلاب.ادارة',
+            'الطلاب.عرض',
+            'الطلاب.انشاء',
+            'الطلاب.تحديث',
+            'الطلاب.حذف',
+            'الطلاب.استيراد',
+            'الطلاب.تصدير',
+            'الطلاب.توليد_تقارير',
+        ]);
     }
 
     /**
      * Determine whether the user can view the model.
+     * من يملك تحديث أو حذف يحتاج عرض البيانات أولاً
      */
     public function view(User $user, Student $student): bool
     {
-        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.عرض']);
+        return $user->hasAnyPermission([
+            'الطلاب.ادارة',
+            'الطلاب.عرض',
+            'الطلاب.تحديث',
+            'الطلاب.حذف',
+        ]);
     }
 
     /**
@@ -37,8 +53,7 @@ class StudentPolicy
      */
     public function update(User $user, Student $student): bool
     {
-        return $user->can('الطلاب.ادارة')
-        || ($user->can('الطلاب.تحديث') && $user->id === $student->created_by);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.تحديث']);
     }
 
     /**
@@ -46,8 +61,7 @@ class StudentPolicy
      */
     public function delete(User $user, Student $student): bool
     {
-        return $user->can('الطلاب.ادارة')
-        || ($user->can('الطلاب.حذف') && $user->id === $student->created_by);
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.حذف']);
     }
 
     public function studentImport(User $user): bool
