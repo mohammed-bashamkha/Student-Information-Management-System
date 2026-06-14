@@ -82,6 +82,9 @@ class RolePermissionSeeder extends Seeder
             'الاخطاء.تصدير',
             'الاخطاء.توليد_تقارير',
 
+            'الطلاب_الموقوفين.عرض',
+            'الطلاب_الموقوفين.تفعيل'
+
         ];
 
         foreach ($permissions as $permission) {

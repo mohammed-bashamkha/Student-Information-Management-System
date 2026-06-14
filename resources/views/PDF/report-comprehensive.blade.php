@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <title>التقرير الإحصائي الشامل</title>
-<script src="https://cdn.tailwindcss.com"></script>
+@vite(['resources/css/app.css'])
 <style>
   @include('PDF._fonts')
   body { font-family:"Amiri","Cairo",serif; margin:0; padding:0; background:#fff; }

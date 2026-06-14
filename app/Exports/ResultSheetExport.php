@@ -32,8 +32,8 @@ class ResultSheetExport implements FromCollection, WithHeadings, WithMapping, Wi
         $this->status = $status;
         $this->title = $title;
 
-        $this->subjects = Subject::where('school_class_id', $this->classId)->get();
-        $classData = SchoolClass::with('level')->find($this->classId);
+        $classData = SchoolClass::with(['level', 'subjects'])->find($this->classId);
+        $this->subjects = $classData->subjects;
         $this->classLevel = $classData->level->name;
 
         $school = School::find($schoolId);

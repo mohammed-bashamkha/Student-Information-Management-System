@@ -13,7 +13,7 @@ class ErrorService
         $this->authorize('viewAny', Error::class);
 
         $query = Error::with([
-            'student', 'createdBy', 
+            'student', 'creator', 
             'academicYear', 'schoolClass', 'school']);
 
         if (!empty($filters['search'])) {
@@ -54,7 +54,7 @@ class ErrorService
         $this->authorize('view', $baseError);
 
         $allErrors = Error::with([
-            'student', 'createdBy', 
+            'student', 'creator', 
             'academicYear', 'schoolClass', 'school'])
             ->where('student_id', $baseError->student_id)
             ->where('academic_year_id', $baseError->academic_year_id)

@@ -46,7 +46,7 @@
         left: 0;
         right: 0;
         height: 5px;
-        background: linear-gradient(90deg, #1a3a5c, #2c5f8a, #1a3a5c);
+        background: #d1d5db;
       }
 
       /* Header Section */
@@ -56,7 +56,7 @@
         align-items: flex-start;
         margin-bottom: 10px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #1a3a5c;
+        border-bottom: 2px solid #d1d5db;
         direction: rtl;
       }
 
@@ -65,7 +65,7 @@
         font-size: 14px;
         font-weight: bold;
         line-height: 2;
-        color: #1a3a5c;
+        color: #000;
       }
 
       .header-center {
@@ -83,12 +83,12 @@
         font-size: 13px;
         font-weight: bold;
         line-height: 2.2;
-        color: #333;
+        color: #000;
       }
 
       .header-left span {
         letter-spacing: 1px;
-        color: #1a3a5c;
+        color: #000;
       }
 
       /* Main Title */
@@ -97,7 +97,7 @@
         font-size: 22px;
         font-weight: bold;
         margin: 12px 0 10px;
-        color: #1a3a5c;
+        color: #000;
         letter-spacing: 1px;
         position: relative;
         padding-bottom: 8px;
@@ -111,20 +111,20 @@
         transform: translateX(-50%);
         width: 200px;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #1a3a5c, transparent);
+        background: linear-gradient(90deg, transparent, #d1d5db, transparent);
       }
 
       /* Sections */
       .section {
-        border: 1.5px solid #2c5f8a;
+        border: 1.5px solid #d1d5db;
         margin: 10px 0;
         border-radius: 4px;
         overflow: hidden;
       }
 
       .section-title {
-        background: #1a3a5c;
-        color: white;
+        background: #f3f4f6;
+        color: #000;
         text-align: center;
         font-size: 15px;
         font-weight: bold;
@@ -150,7 +150,7 @@
       .photo-area {
         width: 140px;
         height: 170px;
-        border: 1.5px solid #2c5f8a;
+        border: 1.5px solid #d1d5db;
         margin: 10px;
         overflow: hidden;
         flex-shrink: 0;
@@ -171,7 +171,7 @@
         align-items: center;
         justify-content: center;
         background: #f0f2f5;
-        color: #8899aa;
+        color: #000;
         font-size: 13px;
         text-align: center;
       }
@@ -207,7 +207,7 @@
         white-space: nowrap;
         margin-left: 5px;
         font-size: 13px;
-        color: #1a3a5c;
+        color: #000;
       }
 
       .form-field .dots {
@@ -217,7 +217,7 @@
         min-width: 50px;
         height: 18px;
         font-size: 13px;
-        color: #333;
+        color: #000;
         padding-bottom: 1px;
       }
 
@@ -227,7 +227,7 @@
         font-size: 12px;
         margin: 8px 0;
         padding: 5px 10px;
-        color: #444;
+        color: #000;
         font-style: italic;
       }
 
@@ -249,7 +249,7 @@
         font-weight: bold;
         margin-left: 5px;
         white-space: nowrap;
-        color: #1a3a5c;
+        color: #000;
         font-size: 12px;
       }
 
@@ -278,7 +278,7 @@
       .checkbox-item input[type="checkbox"] {
         width: 14px;
         height: 14px;
-        accent-color: #1a3a5c;
+        accent-color: #000;
       }
 
       .checkbox-item label {
@@ -295,7 +295,7 @@
         font-size: 15px;
         font-weight: bold;
         padding: 6px;
-        color: #1a3a5c;
+        color: #000;
         position: relative;
         margin-bottom: 6px;
       }
@@ -308,7 +308,7 @@
         transform: translateX(-50%);
         width: 120px;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #1a3a5c, transparent);
+        background: linear-gradient(90deg, transparent, #d1d5db, transparent);
       }
 
       .grades-table {
@@ -318,15 +318,15 @@
 
       .grades-table th,
       .grades-table td {
-        border: 1px solid #2c5f8a;
+        border: 1px solid #d1d5db;
         padding: 5px 6px;
         text-align: center;
         font-size: 11px;
       }
 
       .grades-table th {
-        background: #1a3a5c;
-        color: white;
+        background: #f3f4f6;
+        color: #000;
         font-weight: bold;
         font-size: 11px;
       }
@@ -343,8 +343,8 @@
       .grades-table .subject-col {
         width: 110px;
         font-weight: bold;
-        color: #1a3a5c;
-        background: #edf2f7 !important;
+        color: #000;
+        background: #f3f4f6 !important;
       }
 
       .grades-table .total-col,
@@ -359,7 +359,7 @@
         justify-content: space-between;
         margin-top: 15px;
         padding-top: 10px;
-        border-top: 1.5px solid #1a3a5c;
+        border-top: 1.5px solid #d1d5db;
         font-size: 12px;
         text-align: center;
         direction: rtl;
@@ -373,14 +373,14 @@
       .footer-sig .name {
         font-weight: bold;
         margin-bottom: 4px;
-        color: #1a3a5c;
+        color: #000;
         font-size: 12px;
       }
 
       .footer-sig .title {
         font-size: 10px;
         font-weight: bold;
-        color: #555;
+        color: #000;
       }
 
       /* Requirements footer */
@@ -388,10 +388,10 @@
         margin-top: 10px;
         font-size: 9px;
         line-height: 1.8;
-        border-top: 1px solid #ddd;
+        border-top: 1px solid #d1d5db;
         padding-top: 6px;
         text-align: right;
-        color: #666;
+        color: #000;
       }
 
       /* Decorative bottom accent */
@@ -402,7 +402,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: linear-gradient(90deg, #1a3a5c, #2c5f8a, #1a3a5c);
+        background: #d1d5db;
       }
 
       @media print {

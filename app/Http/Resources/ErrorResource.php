@@ -21,7 +21,7 @@ class ErrorResource extends JsonResource
             'new_value' => $this->formatValue($this->field_name, $this->new_value),
             'reason' => $this->reason,
             'student' => $this->whenLoaded('student'),
-            'created_by' => $this->whenLoaded('createdBy'),
+            'created_by' => $this->whenLoaded('creator'),
             'academic_year' => $this->whenLoaded('academicYear'),
             'school_class' => $this->whenLoaded('schoolClass'),
             'school' => $this->whenLoaded('school'),

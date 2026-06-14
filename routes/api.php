@@ -21,6 +21,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\StudentsDataExportController;
 use App\Http\Controllers\ErrorController;
+use App\Http\Controllers\FinalResultExportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\GlobalSearchController;
 
@@ -77,6 +78,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // Export endpoints
         Route::get('/students/export/form', [StudentsDataExportController::class, 'exportForm']);
         Route::post('/students/export', [StudentsDataExportController::class, 'export_students_data']);
+        Route::get('/export/final-result', [FinalResultExportController::class, 'exportFinalResults']);
 
         // students route
         Route::apiResource('/students', StudentController::class);

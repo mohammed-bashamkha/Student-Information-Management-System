@@ -13,6 +13,7 @@ use App\Http\Resources\ErrorResource;
 
 class ErrorController extends Controller
 {
+    use AuthorizesRequests;
     protected $errorService;
     public function __construct(ErrorService $errorService)
     {
@@ -42,6 +43,7 @@ class ErrorController extends Controller
 
     public function exportStudentErrors(Request $request)
     {
+        $this->authorize('errorsExport', Error::class);
         $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
         ]);

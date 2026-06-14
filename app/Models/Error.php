@@ -24,8 +24,8 @@ class Error extends Model
     {
         return $this->belongsTo(School::class);
     }
-    public function createdBy()
+    public function creator()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'createdBy');
     }
 }

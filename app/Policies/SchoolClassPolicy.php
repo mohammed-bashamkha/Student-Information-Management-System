@@ -10,10 +10,12 @@ class SchoolClassPolicy
 {
     /**
      * Determine whether the user can view any models.
+     * البيانات المرجعية: أي مستخدم مصادق يمكنه عرض قائمة الصفوف
+     * (مطلوبة كقوائم منسدلة في إضافة/تعديل الطلاب، الدرجات، المواد، إلخ)
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['الصفوف.عرض', 'الصفوف.ادارة']);
+        return true; // Reference data — accessible to all authenticated users
     }
 
     /**

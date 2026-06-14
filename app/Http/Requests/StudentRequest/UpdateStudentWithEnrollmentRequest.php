@@ -27,16 +27,16 @@ class UpdateStudentWithEnrollmentRequest extends FormRequest
         return [
             'school_number' => ['required', 'integer', 'min_digits:3', Rule::unique('students', 'school_number')->ignore($studentId)],
             'seat_number' => ['required', 'integer', 'min_digits:3', Rule::unique('students', 'seat_number')->ignore($studentId)],
-            'full_name' => ['required', 'string', 'regex:/^(\S+\s){3,}\S+$/', Rule::unique('students', 'full_name')->ignore($studentId)],
-            'nationality' => 'nullable|string|max:15',
+            'full_name' => ['required', 'string', 'regex:/^(\S+\s){3,}\S+$/'],
+            'nationality' => 'required|string|max:15',
             'gender' => 'required|string|in:male,female',
-            'date_of_birth' => 'nullable|date',
-            'registration_date' => 'nullable|date',
+            'date_of_birth' => 'required|date',
+            'registration_date' => 'required|date',
             'school_id' => 'required|exists:schools,id',
-            'place_of_birth' => 'nullable|string',
+            'place_of_birth' => 'required|string',
             'class_id' => 'required|exists:school_classes,id',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'reason' => 'nullable|string|max:255',
+            'reason' => 'required|string|max:255',
         ];
     }
 }

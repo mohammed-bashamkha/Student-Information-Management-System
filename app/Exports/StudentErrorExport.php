@@ -52,7 +52,7 @@ class StudentErrorExport implements FromCollection, WithHeadings, WithMapping, W
     public function collection()
     {
         $this->errorsCollection = Error::where('academic_year_id', $this->academicYearId)
-            ->with(['student', 'school', 'schoolClass', 'createdBy'])
+            ->with(['student', 'school', 'schoolClass', 'creator'])
             ->orderBy('student_id')
             ->orderBy('created_at')
             ->get();
@@ -67,8 +67,8 @@ class StudentErrorExport implements FromCollection, WithHeadings, WithMapping, W
             'الرقم المدرسي الط.',
             'اسم الطالب',
             'الحقل المعدل',
-            'القيمة القديمة',
-            'القيمة الجديدة',
+            'قبل التصحيح',
+            'بعد التصحيح',
             'المدرسة',
             'الصف',
             'مدخل التعديل',
@@ -115,7 +115,7 @@ class StudentErrorExport implements FromCollection, WithHeadings, WithMapping, W
             $error->new_value,
             $error->school->name ?? '',
             $error->schoolClass->name ?? '',
-            $error->createdBy->name ?? '',
+            $error->creator->name ?? '',
             $error->created_at ? $error->created_at->format('Y-m-d') : '',
             $error->reason,
         ];
@@ -153,8 +153,8 @@ class StudentErrorExport implements FromCollection, WithHeadings, WithMapping, W
                 $sheet->getColumnDimension('B')->setWidth(15);  // الرقم المدرسي
                 $sheet->getColumnDimension('C')->setWidth(30);  // اسم الطالب
                 $sheet->getColumnDimension('D')->setWidth(18);  // الحقل المعدل
-                $sheet->getColumnDimension('E')->setWidth(30);  // القيمة القديمة
-                $sheet->getColumnDimension('F')->setWidth(30);  // القيمة الجديدة
+                $sheet->getColumnDimension('E')->setWidth(30);  // قبل التصحيح
+                $sheet->getColumnDimension('F')->setWidth(30);  // بعد التصحيح
                 $sheet->getColumnDimension('G')->setWidth(25);  // المدرسة
                 $sheet->getColumnDimension('H')->setWidth(15);  // الصف
                 $sheet->getColumnDimension('I')->setWidth(20);  // مدخل التعديل
@@ -192,7 +192,7 @@ class StudentErrorExport implements FromCollection, WithHeadings, WithMapping, W
                         return $e->class_id;
                     }],
                     'creator' => ['col' => 'I', 'val' => function ($e) {
-                        return $e->createdBy->id ?? '';
+                        return $e->creator->id ?? '';
                     }],
                     'date'    => ['col' => 'J', 'val' => function ($e) {
                         return $e->created_at ? $e->created_at->format('Y-m-d') : '';

@@ -10,10 +10,12 @@ class SchoolPolicy
 {
     /**
      * Determine whether the user can view any models.
+     * البيانات المرجعية: أي مستخدم مصادق يمكنه عرض قائمة المدارس
+     * (مطلوبة كقوائم منسدلة في إضافة/تعديل الطلاب، التحويلات، الدرجات، إلخ)
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['المدارس.عرض', 'المدارس.ادارة']);
+        return true; // Reference data — accessible to all authenticated users
     }
 
     /**

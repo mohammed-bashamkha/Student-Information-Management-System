@@ -78,4 +78,14 @@ class StudentPolicy
     {
         return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب.توليد_تقارير']);
     }
+
+    public function viewAllSuspendedStudents(User $user): bool
+    {
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب_الموقوفين.عرض']);
+    }
+
+    public function activateSuspendedStudent(User $user): bool
+    {
+        return $user->hasAnyPermission(['الطلاب.ادارة', 'الطلاب_الموقوفين.تفعيل']);
+    }
 }

@@ -10,7 +10,9 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(SuspendExpiredAdmissionsJob::class)
+Schedule::call(function () {
+    SuspendExpiredAdmissionsJob::dispatchSync();
+})
     ->everyMinute()
     ->name('suspend-expired-admissions')
     ->withoutOverlapping()

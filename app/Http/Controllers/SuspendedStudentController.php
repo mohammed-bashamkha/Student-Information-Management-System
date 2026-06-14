@@ -25,6 +25,7 @@ class SuspendedStudentController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAllSuspendedStudents', Student::class);
         $query = StudentEnrollment::with([
             'student.transfers' => function ($q) {
                 $q->where('type', 'admission')
@@ -102,6 +103,7 @@ class SuspendedStudentController extends Controller
      */
     public function restore(Request $request, int $studentId)
     {
+        $this->authorize('activateSuspendedStudent', Student::class);
         $enrollment = StudentEnrollment::where('student_id', $studentId)
             ->where('status', 'suspended')
             ->latest('id')

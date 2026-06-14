@@ -8,12 +8,16 @@ use App\Models\School;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use App\Exports\StudentDataExport;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FinalResultExportController extends Controller
 {
+    use AuthorizesRequests;
     public function exportFinalResults(Request $request)
     {
+        $this->authorize('finalResultExport', FinalResultExport::class);
+        
         $request->validate([
             'school_id' => 'required|exists:schools,id',
             'class_id' => 'required|exists:school_classes,id',
@@ -29,16 +33,21 @@ class FinalResultExportController extends Controller
         $aId = AcademicYear::where('id', $academicYearId)->value('year');
 
         $fileName = "النتائج_النهائية_للصف_{$cId}_لمدرسة_{$sId}_للعام_({$aId})_" . now()->format('Y-m-d') . '.xlsx';
+        $fileName = str_replace(['/', '\\'], '-', $fileName);
 
         return Excel::download(
             new FinalResultExport($schoolId, $classId, $academicYearId),
-            $fileName
+            $fileName,
+            \Maatwebsite\Excel\Excel::XLSX,
+            ['Access-Control-Expose-Headers' => 'Content-Disposition']
         );
     }
 
 
     public function exportStudentData(Request $request)
     {
+        $this->authorize('studentExport', StudentDataExport::class);
+
         $request->validate([
             'school_id' => 'required|exists:schools,id',
             'class_id' => 'required|exists:school_classes,id',
@@ -53,7 +62,9 @@ class FinalResultExportController extends Controller
                 $request->class_id,
                 $request->academic_year_id
             ),
-            $fileName
+            $fileName,
+            \Maatwebsite\Excel\Excel::XLSX,
+            ['Access-Control-Expose-Headers' => 'Content-Disposition']
         );
     }
 }
